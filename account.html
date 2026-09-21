@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aoibh — Your Account</title>
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #ffffff;
+    color: #16161a;
+    padding: 2.5rem;
+  }
+  .wrap { max-width: 480px; margin: 8vh auto 0; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+  p.subtitle { color: #6b6a66; font-size: 0.9rem; margin: 0 0 2rem; }
+  .plan-card {
+    border: 1px solid #e5e4e0; border-radius: 12px;
+    padding: 1.25rem 1.4rem; margin-bottom: 1.5rem;
+  }
+  .plan-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+  .plan-meta { font-size: 0.85rem; color: #6b6a66; }
+  .plan-warning {
+    margin-top: 10px; padding: 0.6rem 0.8rem; border-radius: 8px;
+    background: #fff6da; color: #8a6d00; font-size: 0.85rem;
+  }
+  .plan-canceled {
+    margin-top: 10px; padding: 0.6rem 0.8rem; border-radius: 8px;
+    background: #f4f4f2; color: #6b6a66; font-size: 0.85rem;
+  }
+  .tools { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 2rem; }
+  .tool-link {
+    display: block;
+    padding: 1rem 1.2rem;
+    border: 1px solid #e5e4e0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #16161a;
+    background: none;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .tool-link strong { display: block; font-size: 1rem; margin-bottom: 2px; }
+  .tool-link span { font-size: 0.85rem; color: #6b6a66; }
+  #logoutBtn {
+    background: none;
+    border: 1px solid #e5e4e0;
+    border-radius: 999px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: #6b6a66;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Your account</h1>
+  <p class="subtitle" id="whoami">Checking session…</p>
+
+  <div class="plan-card" id="planCard" hidden>
+    <div class="plan-name" id="planName"></div>
+    <div class="plan-meta" id="planMeta"></div>
+    <div class="plan-warning" id="planWarning" hidden>Your last payment didn't go through — please update your card to keep your subscription active.</div>
+    <div class="plan-canceled" id="planCanceled" hidden>This subscription is canceled. You can still see past projects from your dashboard links, but can't start new ones.</div>
+  </div>
+
+  <div class="tools">
+    <button class="tool-link" type="button" disabled>
+      <strong>Start a new project</strong>
+      <span>Coming soon.</span>
+    </button>
+    <button class="tool-link" type="button" disabled>
+      <strong>Manage subscription</strong>
+      <span>Coming soon — change plan, update card, or cancel.</span>
+    </button>
+  </div>
+
+  <button id="logoutBtn">Sign out</button>
+</div>
+
+<script>
+  const TIER_LABELS = { starter: 'Starter', growth: 'Growth' };
+
+  (async () => {
+    try {
+      const res = await fetch('/api/subscriber-auth-session');
+      const data = await res.json();
+      if (!data.authenticated) {
+        location.href = '/subscriber-login.html';
+        return;
+      }
+      document.getElementById('whoami').textContent = 'Signed in as ' + data.email;
+
+      const planCard = document.getElementById('planCard');
+      document.getElementById('planName').textContent = (TIER_LABELS[data.tier] || data.tier) + ' plan';
+
+      if (data.status === 'canceled') {
+        document.getElementById('planCanceled').hidden = false;
+      } else if (data.status === 'past_due') {
+        document.getElementById('planWarning').hidden = false;
+      } else if (data.currentPeriodEnd) {
+        const renews = new Date(data.currentPeriodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('planMeta').textContent = 'Renews ' + renews;
+      }
+      planCard.hidden = false;
+    } catch (err) {
+      location.href = '/subscriber-login.html';
+    }
+  })();
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try { await fetch('/api/subscriber-auth-logout', { method: 'POST' }); } catch (err) {}
+    location.href = '/subscriber-login.html';
+  });
+</script>
+</body>
+</html>

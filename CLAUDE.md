@@ -29,6 +29,14 @@ what's actually here.
   `login.html` if not signed in) — no more shared admin secret.
 - `qa-review.html` — internal-only page listing AI-flagged uploads for a
   human decision (`api/qa-review.js`). Same session gate as `upload.html`.
+- `subscriber-login.html` — sign-in for Starter/Growth subscribers: enter
+  your email, get a magic link. Separate from staff `login.html` — a
+  subscriber token and a staff token are never interchangeable.
+- `account.html` — a subscriber's post-login hub: plan, renewal date (or
+  a past-due/canceled notice), and placeholder "Start a new project" /
+  "Manage subscription" buttons (not wired up yet — see Subscriptions
+  below). Redirects to `subscriber-login.html` if there's no valid
+  session.
 - `maintenance.html` — static page served by `middleware.js` when
   `site_settings.mode = 'maintenance'`.
 - `styles.css` — shared site CSS.
@@ -94,6 +102,15 @@ what's actually here.
     `qa-review.html` on load to gate rendering.
   - `auth-logout.js` — `POST /api/auth-logout` — deletes the session row,
     clears the cookie.
+  - `subscriber-auth-request.js` / `subscriber-auth-verify.js` /
+    `subscriber-auth-session.js` / `subscriber-auth-logout.js` — same
+    magic-link pattern as the staff auth files above, but checks the
+    `subscribers` table instead of a single hardcoded email, and reads/
+    writes `subscriber_magic_links`/`subscriber_sessions` (the
+    `aoibh_subscriber_session` cookie) instead of the staff tables.
+    `auth-session.js`'s response also carries `tier`/`status`/
+    `currentPeriodEnd` (via a PostgREST embed on `subscribers`), which
+    `account.html` renders.
 - `Research/` — competitive research, notes, and the backend architecture
   proposal (now annotated with what's actually built vs. still planned).
 - `Moodboards/` — visual inspiration (currently empty).
@@ -135,16 +152,19 @@ comment for the full event list. New tables: `subscribers`
 separate on purpose (a staff token should never double as a subscriber
 token). Enterprise stays "Talk to us" — no self-serve checkout for it.
 
-Still to come (see `Research/` — actually no, this isn't written up as a
-doc, it's mid-build): subscriber login (`subscriber-login.html`,
-mirroring `login.html`), an account hub showing plan usage, wiring a
-"start a new project" flow into `match-designer.js` with a per-billing-
-period project cap (Starter 1/month, Growth 3/month — computed by
-counting `briefs.subscriber_id` rows in the current period, not a stored
-counter), and a Stripe Customer Portal link for self-serve cancel/plan
-changes. `briefs.subscriber_id` (nullable) links a project to the
-subscription that's covering it; `payment_status = 'covered_by_subscription'`
-on those rows skips the deposit/balance flow entirely.
+Subscriber login + account hub (`subscriber-login.html`, `account.html`)
+are built — see the `subscriber-auth-*.js` files above. `account.html`'s
+"Start a new project" and "Manage subscription" buttons are visible but
+intentionally disabled ("Coming soon") — not wired to anything yet.
+
+Still to come: wiring "Start a new project" into `match-designer.js`
+with a per-billing-period project cap (Starter 1/month, Growth 3/month —
+computed by counting `briefs.subscriber_id` rows in the current period,
+not a stored counter), and a real Stripe Customer Portal link behind
+"Manage subscription". `briefs.subscriber_id` (nullable, not added yet)
+will link a project to the subscription covering it;
+`payment_status = 'covered_by_subscription'` on those rows will skip the
+deposit/balance flow entirely.
 
 ## Database (Supabase)
 
