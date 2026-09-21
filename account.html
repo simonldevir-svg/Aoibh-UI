@@ -42,9 +42,10 @@
     width: 100%;
     box-sizing: border-box;
     font-family: inherit;
-    cursor: not-allowed;
-    opacity: 0.55;
+    cursor: pointer;
   }
+  .tool-link[disabled] { cursor: not-allowed; opacity: 0.55; }
+  .tool-link.disabled { cursor: not-allowed; opacity: 0.55; pointer-events: none; }
   .tool-link strong { display: block; font-size: 1rem; margin-bottom: 2px; }
   .tool-link span { font-size: 0.85rem; color: #6b6a66; }
   #logoutBtn {
@@ -71,10 +72,10 @@
   </div>
 
   <div class="tools">
-    <button class="tool-link" type="button" disabled>
+    <a class="tool-link" id="newProjectLink" href="/new-project.html">
       <strong>Start a new project</strong>
-      <span>Coming soon.</span>
-    </button>
+      <span id="newProjectSub">Included in your plan.</span>
+    </a>
     <button class="tool-link" type="button" disabled>
       <strong>Manage subscription</strong>
       <span>Coming soon — change plan, update card, or cancel.</span>
@@ -100,13 +101,27 @@
       const planCard = document.getElementById('planCard');
       document.getElementById('planName').textContent = (TIER_LABELS[data.tier] || data.tier) + ' plan';
 
+      const newProjectLink = document.getElementById('newProjectLink');
+      const newProjectSub = document.getElementById('newProjectSub');
+      const atCap = typeof data.projectsUsed === 'number' && typeof data.projectsCap === 'number' && data.projectsUsed >= data.projectsCap;
+
       if (data.status === 'canceled') {
         document.getElementById('planCanceled').hidden = false;
+        newProjectLink.classList.add('disabled');
+        newProjectSub.textContent = 'Not available — subscription canceled.';
       } else if (data.status === 'past_due') {
         document.getElementById('planWarning').hidden = false;
-      } else if (data.currentPeriodEnd) {
-        const renews = new Date(data.currentPeriodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('planMeta').textContent = 'Renews ' + renews;
+        newProjectLink.classList.add('disabled');
+        newProjectSub.textContent = 'Not available — please update your payment method.';
+      } else {
+        if (data.currentPeriodEnd) {
+          const renews = new Date(data.currentPeriodEnd).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+          document.getElementById('planMeta').textContent = 'Renews ' + renews;
+        }
+        if (typeof data.projectsUsed === 'number' && typeof data.projectsCap === 'number') {
+          newProjectSub.textContent = data.projectsUsed + ' of ' + data.projectsCap + ' used this billing period';
+          if (atCap) newProjectLink.classList.add('disabled');
+        }
       }
       planCard.hidden = false;
     } catch (err) {

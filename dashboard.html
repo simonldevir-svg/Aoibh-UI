@@ -414,21 +414,32 @@
     if (Array.isArray(data.previewUrls) && data.previewUrls.length > 0) {
       row.appendChild(renderPreviewCard(data.previewUrls));
 
-      const unlock = document.createElement("div");
-      unlock.className = "card unlock";
-      unlock.innerHTML = `
-        <div class="title">Unlock full files</div>
-        <div class="price">${formatEuros(data.balanceAmount)} due</div>
-        <div class="price-note">Remaining 70% · ${formatEuros(data.depositAmount)} deposit already paid</div>
-        <button class="unlock-btn" id="payBalanceBtn">Pay balance</button>
-        <div class="pay-error" id="balanceError"></div>
-        <div class="unlock-sub">Includes source files, assets & style guide</div>
-      `;
-      row.appendChild(unlock);
+      if (data.paymentStatus === "covered_by_subscription") {
+        // Included in their plan — nothing to pay, so no unlock card.
+        const included = document.createElement("div");
+        included.className = "card unlock";
+        included.innerHTML = `
+          <div class="title">Included in your plan</div>
+          <div class="unlock-sub">Final files — source files, assets &amp; style guide — will appear here once your designer marks this complete.</div>
+        `;
+        row.appendChild(included);
+      } else {
+        const unlock = document.createElement("div");
+        unlock.className = "card unlock";
+        unlock.innerHTML = `
+          <div class="title">Unlock full files</div>
+          <div class="price">${formatEuros(data.balanceAmount)} due</div>
+          <div class="price-note">Remaining 70% · ${formatEuros(data.depositAmount)} deposit already paid</div>
+          <button class="unlock-btn" id="payBalanceBtn">Pay balance</button>
+          <div class="pay-error" id="balanceError"></div>
+          <div class="unlock-sub">Includes source files, assets & style guide</div>
+        `;
+        row.appendChild(unlock);
 
-      const balBtn = unlock.querySelector("#payBalanceBtn");
-      const balErrorEl = unlock.querySelector("#balanceError");
-      balBtn.addEventListener("click", () => startCheckout("balance", balBtn, balErrorEl));
+        const balBtn = unlock.querySelector("#payBalanceBtn");
+        const balErrorEl = unlock.querySelector("#balanceError");
+        balBtn.addEventListener("click", () => startCheckout("balance", balBtn, balErrorEl));
+      }
     } else {
       const waiting = document.createElement("div");
       waiting.className = "card waiting";
@@ -566,10 +577,13 @@
       }
 
       const hasPreview = Array.isArray(data.previewUrls) && data.previewUrls.length > 0;
+      const isSubscriberProject = paymentStatus === "covered_by_subscription";
       setStatusChip("blue", hasPreview ? "In progress — preview ready for review" : "In progress — your designer is working on it");
       const projectName = (data.answers && data.answers.project) || "project";
       document.getElementById("heroMsg").textContent = hasPreview
-        ? `Your ${projectName} preview is ready. Take a look below — the balance unlocks the full files.`
+        ? (isSubscriberProject
+            ? `Your ${projectName} preview is ready. Take a look below — final files will unlock here once it's complete.`
+            : `Your ${projectName} preview is ready. Take a look below — the balance unlocks the full files.`)
         : "Your designer is on it — we'll let you know the moment a preview is ready to review.";
       renderProgressRow(data);
 

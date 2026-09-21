@@ -33,10 +33,14 @@ what's actually here.
   your email, get a magic link. Separate from staff `login.html` — a
   subscriber token and a staff token are never interchangeable.
 - `account.html` — a subscriber's post-login hub: plan, renewal date (or
-  a past-due/canceled notice), and placeholder "Start a new project" /
-  "Manage subscription" buttons (not wired up yet — see Subscriptions
-  below). Redirects to `subscriber-login.html` if there's no valid
-  session.
+  a past-due/canceled notice), usage ("X of N used this period"), a
+  working "Start a new project" link, and a placeholder "Manage
+  subscription" button (not wired up yet — see Subscriptions below).
+  Redirects to `subscriber-login.html` if there's no valid session.
+- `new-project.html` — session-gated form (project/deadline/assets) a
+  subscriber uses to start a project under their plan. Posts to
+  `api/match-designer.js`, which checks their session cookie directly —
+  see Subscriptions below.
 - `maintenance.html` — static page served by `middleware.js` when
   `site_settings.mode = 'maintenance'`.
 - `styles.css` — shared site CSS.
@@ -153,18 +157,36 @@ separate on purpose (a staff token should never double as a subscriber
 token). Enterprise stays "Talk to us" — no self-serve checkout for it.
 
 Subscriber login + account hub (`subscriber-login.html`, `account.html`)
-are built — see the `subscriber-auth-*.js` files above. `account.html`'s
-"Start a new project" and "Manage subscription" buttons are visible but
-intentionally disabled ("Coming soon") — not wired to anything yet.
+are built — see the `subscriber-auth-*.js` files above.
 
-Still to come: wiring "Start a new project" into `match-designer.js`
-with a per-billing-period project cap (Starter 1/month, Growth 3/month —
-computed by counting `briefs.subscriber_id` rows in the current period,
-not a stored counter), and a real Stripe Customer Portal link behind
-"Manage subscription". `briefs.subscriber_id` (nullable, not added yet)
-will link a project to the subscription covering it;
-`payment_status = 'covered_by_subscription'` on those rows will skip the
-deposit/balance flow entirely.
+"Start a new project" is live: `account.html` links to `new-project.html`
+(session-gated, 3 fields — project/deadline/assets, no name/email/triage/
+budget since those exist for cold leads, not paying subscribers) which
+POSTs to `api/match-designer.js`. That handler now checks for a
+`aoibh_subscriber_session` cookie before anything else — if present, it
+looks up the subscriber (never trusting `email` from the request body,
+only the verified session), blocks with a clear error if `status` isn't
+`active` or if they've hit their plan's per-billing-period cap (Starter
+1, Growth 3 — `TIER_PROJECT_CAPS`, checked via a computed count of
+`briefs.subscriber_id` rows since `current_period_start`, same
+"computed, not a stored counter" approach as everywhere else), and
+otherwise saves the brief with `subscriber_id` set and
+`payment_status: 'covered_by_subscription'` — skipping the deposit/
+balance flow entirely. Since there's no deposit-confirmed webhook moment
+to notify the client from, `saveBrief()` sends a "Your project is
+underway" email directly for these. `account.html` and
+`subscriber-auth-session.js` also surface "X of N used this period",
+computed the same way.
+
+`dashboard.html` and `api/match-designer.js`'s `saveBrief()` treat
+`payment_status = 'covered_by_subscription'` as "already paid, no
+balance owed" — the deposit screen never shows, and the in-progress
+preview state shows "Included in your plan" instead of a "Pay balance"
+button. `api/dashboard-data.js` needed no changes — it already passes
+`payment_status` through untouched.
+
+Still to come: a real Stripe Customer Portal link behind "Manage
+subscription" (currently disabled, "Coming soon").
 
 ## Database (Supabase)
 
@@ -176,7 +198,11 @@ proposed — see section 0 there for the full comparison:
   the full Stripe payment state (`payment_status`, `deposit_amount`,
   `balance_amount`, `stripe_deposit_session_id`,
   `stripe_balance_session_id`, `deposit_paid_at`, `balance_paid_at`) all
-  live on this one table — no separate `clients`/`projects` split.
+  live on this one table — no separate `clients`/`projects` split. Also
+  `subscriber_id` (nullable, FK to `subscribers`) — set when a project
+  was started from a subscriber's account instead of the trial flow;
+  those rows get `payment_status = 'covered_by_subscription'` instead of
+  the usual pending/deposit_paid/paid_in_full progression.
 - `contacts` — footer contact-form submissions. `id`, `created_at`,
   `query`, `email` only.
 - `deliverables` — file pointers (`brief_id`, `file_name`, `file_url`),

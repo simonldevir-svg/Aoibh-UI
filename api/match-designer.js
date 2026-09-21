@@ -124,10 +124,71 @@ function briefText(answers) {
   return Object.values(answers || {}).filter(Boolean).join(" ").toLowerCase();
 }
 
+function getCookie(req, name) {
+  const header = req.headers.cookie || "";
+  const match = header.split(";").map((c) => c.trim()).find((c) => c.startsWith(name + "="));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
+}
+
+const TIER_PROJECT_CAPS = { starter: 1, growth: 3 };
+
+// Looks up the subscriber tied to the current request's session cookie,
+// if any — this is what lets a subscriber start a project without the
+// deposit/balance flow, gated by their plan's per-billing-period cap.
+// Returns null for any non-subscriber (or invalid/expired session)
+// request, which is the common case and leaves the existing trial flow
+// completely unaffected.
+async function getRequestingSubscriber(req) {
+  const token = getCookie(req, "aoibh_subscriber_session");
+  if (!token || !process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  try {
+    const res = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/subscriber_sessions?token=eq.${encodeURIComponent(token)}&select=expires_at,subscribers(id,email,tier,status,current_period_start)&limit=1`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: "Bearer " + process.env.SUPABASE_SERVICE_ROLE_KEY,
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const session = rows[0];
+    if (!session || new Date(session.expires_at) < new Date() || !session.subscribers) return null;
+    return session.subscribers;
+  } catch (err) {
+    console.error("getRequestingSubscriber failed:", err.message);
+    return null;
+  }
+}
+
+// Computed check against existing briefs rows, not a stored counter —
+// naturally resets each period since current_period_start advances on
+// renewal (see api/stripe-webhook.js's handleSubscriptionUpdated).
+async function countSubscriberProjectsThisPeriod(subscriberId, periodStart) {
+  try {
+    const res = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/briefs?subscriber_id=eq.${encodeURIComponent(subscriberId)}&created_at=gte.${encodeURIComponent(periodStart)}&select=id`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: "Bearer " + process.env.SUPABASE_SERVICE_ROLE_KEY,
+        },
+      }
+    );
+    if (!res.ok) return 0;
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch (err) {
+    console.error("countSubscriberProjectsThisPeriod failed:", err.message);
+    return 0;
+  }
+}
+
 // Saves every completed brief to Supabase and sends a notification email
 // via Resend. Both steps fail soft — if Supabase or Resend has a problem,
 // we log it and move on rather than breaking the response the user sees.
-async function saveBrief({ email, name, answers, result, artDirectorRoster }) {
+async function saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId }) {
   let briefId = null;
   let jobNumber = null;
   const artDirector = artDirectorRoster[Math.floor(Math.random() * artDirectorRoster.length)];
@@ -151,6 +212,7 @@ async function saveBrief({ email, name, answers, result, artDirectorRoster }) {
           confidence: result.confidence,
           source: result.source,
           art_director_id: artDirector.id,
+          ...(subscriberId ? { subscriber_id: subscriberId, payment_status: "covered_by_subscription" } : {}),
         }),
       });
       if (!supaRes.ok) {
@@ -184,12 +246,36 @@ async function saveBrief({ email, name, answers, result, artDirectorRoster }) {
         body: JSON.stringify({
           from: "Aoibh Leads <leads@aoibh.ai>",
           to: ["hello@aoibh.ai"],
-          subject: `New brief: ${name || email || "anonymous"} matched to ${result.designer.name}`,
+          subject: `New brief: ${name || email || "anonymous"} matched to ${result.designer.name}${subscriberId ? " (subscription)" : ""}`,
           text: `New brief submitted.\n\nName: ${name || "—"}\nEmail: ${email || "—"}\n\nAnswers:\n${answersList}\n\nMatched designer: ${result.designer.name} (${result.confidence}% confidence, source: ${result.source})\nReason: ${result.reason}${dashboardLine}`,
         }),
       });
     } catch (err) {
       console.error("sendLeadEmail failed:", err.message);
+    }
+
+    // Subscriber-covered projects skip the deposit stage entirely, so
+    // there's no stripe-webhook "deposit confirmed" moment to notify the
+    // client from — send that confirmation here instead.
+    if (subscriberId && briefId && email) {
+      try {
+        const dashboardUrl = `https://aoibh.ai/dashboard.html?id=${briefId}&email=${encodeURIComponent(email)}`;
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Aoibh <hello@aoibh.ai>",
+            to: [email],
+            subject: "Your project is underway",
+            text: `Hi${name ? " " + name : ""},\n\n${result.designer.name} is getting started on your project now — included in your subscription, no payment needed.\n\nTrack progress here: ${dashboardUrl}\n\n— Aoibh`,
+          }),
+        });
+      } catch (err) {
+        console.error("sendSubscriberProjectStartedEmail failed:", err.message);
+      }
     }
   }
 
@@ -228,8 +314,30 @@ export default async function handler(req, res) {
   }
 
   const answers = (req.body && req.body.answers) || {};
-  const email = (req.body && req.body.email || "").trim();
+  let email = (req.body && req.body.email || "").trim();
   const name = (req.body && req.body.name || "").trim();
+
+  // A subscriber's identity and cap are established from their own
+  // session cookie, never from the request body — otherwise a client
+  // could just claim to be any subscriber's email to skip payment.
+  let subscriberId = null;
+  const subscriber = await getRequestingSubscriber(req);
+  if (subscriber) {
+    if (subscriber.status !== "active") {
+      return res.status(403).json({
+        error: "Your subscription isn't active — please update your payment method to start a new project.",
+      });
+    }
+    const cap = TIER_PROJECT_CAPS[subscriber.tier];
+    const used = await countSubscriberProjectsThisPeriod(subscriber.id, subscriber.current_period_start);
+    if (cap != null && used >= cap) {
+      return res.status(403).json({
+        error: `You've used all ${cap} project${cap === 1 ? "" : "s"} included in your plan this billing period.`,
+      });
+    }
+    email = subscriber.email;
+    subscriberId = subscriber.id;
+  }
 
   const [roster, artDirectorRoster] = await Promise.all([
     fetchDesigners("designer", FALLBACK_ROSTER),
@@ -239,7 +347,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     const fallbackResult = fallbackMatch(answers, roster);
-    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster });
+    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId });
     return res.status(200).json({ ...fallbackResult, briefId, jobNumber });
   }
 
@@ -317,7 +425,7 @@ Pick the designer now.`;
       confidence,
       source: "ai",
     };
-    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result, artDirectorRoster });
+    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId });
     return res.status(200).json({ ...result, briefId, jobNumber });
   } catch (err) {
     // Network error, timeout, bad JSON, or an id not in the roster — always
@@ -325,7 +433,7 @@ Pick the designer now.`;
     // with no designer at all.
     console.error("match-designer failed:", err.message);
     const fallbackResult = fallbackMatch(answers, roster);
-    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster });
+    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId });
     return res.status(200).json({ ...fallbackResult, briefId, jobNumber });
   }
 }

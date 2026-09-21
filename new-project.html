@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aoibh — Start a Project</title>
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #ffffff;
+    color: #16161a;
+    padding: 2.5rem;
+  }
+  .wrap { max-width: 480px; margin: 8vh auto 0; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+  p.subtitle { color: #6b6a66; font-size: 0.9rem; margin: 0 0 2rem; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #e5e4e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  button {
+    width: 100%;
+    background: #16161a;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.9rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #statusMsg { margin-top: 1rem; font-size: 0.9rem; text-align: center; }
+  #statusMsg.error { color: #c0392b; }
+  a.back-link { display: inline-block; margin-bottom: 1.5rem; color: #6b6a66; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="/account.html">← Back to account</a>
+  <h1>Start a new project</h1>
+  <p class="subtitle" id="planNote">Checking your plan…</p>
+
+  <form id="projectForm">
+    <label for="projectInput">What type of project is this?</label>
+    <input type="text" id="projectInput" placeholder="e.g. Landing page for our new product">
+
+    <label for="deadlineInput">When do you need this delivered?</label>
+    <input type="text" id="deadlineInput" placeholder="e.g. Within 2 weeks">
+
+    <label for="assetsInput">Do you already have a logo or brand materials?</label>
+    <textarea id="assetsInput" placeholder="e.g. Yes, we have a full brand guide — or: no, starting from nothing"></textarea>
+
+    <button type="submit" id="submitBtn">Start project</button>
+  </form>
+  <div id="statusMsg"></div>
+</div>
+
+<script>
+  let subscriberEmail = null;
+
+  (async () => {
+    try {
+      const res = await fetch('/api/subscriber-auth-session');
+      const data = await res.json();
+      if (!data.authenticated) {
+        location.href = '/subscriber-login.html';
+        return;
+      }
+      subscriberEmail = data.email;
+      const TIER_LABELS = { starter: 'Starter', growth: 'Growth' };
+      document.getElementById('planNote').textContent =
+        'Starting a project under your ' + (TIER_LABELS[data.tier] || data.tier) + ' plan.';
+    } catch (err) {
+      location.href = '/subscriber-login.html';
+    }
+  })();
+
+  const form = document.getElementById('projectForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const statusMsg = document.getElementById('statusMsg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const project = document.getElementById('projectInput').value.trim();
+    const deadline = document.getElementById('deadlineInput').value.trim();
+    const assets = document.getElementById('assetsInput').value.trim();
+
+    statusMsg.textContent = '';
+    statusMsg.className = '';
+
+    if (!project || !deadline || !assets) {
+      statusMsg.textContent = 'Please fill in all three fields.';
+      statusMsg.className = 'error';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Matching you with a designer…';
+
+    try {
+      const res = await fetch('/api/match-designer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: { project, deadline, assets } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      if (!data.briefId) {
+        throw new Error('Could not save your project — please try again.');
+      }
+
+      location.href = `/dashboard.html?id=${data.briefId}&email=${encodeURIComponent(subscriberEmail || '')}`;
+    } catch (err) {
+      statusMsg.textContent = err.message;
+      statusMsg.className = 'error';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Start project';
+    }
+  });
+</script>
+</body>
+</html>
