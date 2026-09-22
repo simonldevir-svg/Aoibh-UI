@@ -76,9 +76,9 @@
       <strong>Start a new project</strong>
       <span id="newProjectSub">Included in your plan.</span>
     </a>
-    <button class="tool-link" type="button" disabled>
+    <button class="tool-link" type="button" id="manageSubBtn">
       <strong>Manage subscription</strong>
-      <span>Coming soon — change plan, update card, or cancel.</span>
+      <span id="manageSubSub">Change plan, update card, or cancel.</span>
     </button>
   </div>
 
@@ -132,6 +132,24 @@
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     try { await fetch('/api/subscriber-auth-logout', { method: 'POST' }); } catch (err) {}
     location.href = '/subscriber-login.html';
+  });
+
+  document.getElementById('manageSubBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('manageSubBtn');
+    const sub = document.getElementById('manageSubSub');
+    const originalSub = sub.textContent;
+    btn.disabled = true;
+    sub.textContent = 'Opening…';
+    try {
+      const res = await fetch('/api/create-portal-session', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      location.href = data.portalUrl;
+    } catch (err) {
+      sub.textContent = err.message;
+      btn.disabled = false;
+      setTimeout(() => { sub.textContent = originalSub; }, 4000);
+    }
   });
 </script>
 </body>

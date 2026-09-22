@@ -113,8 +113,17 @@ what's actually here.
     writes `subscriber_magic_links`/`subscriber_sessions` (the
     `aoibh_subscriber_session` cookie) instead of the staff tables.
     `auth-session.js`'s response also carries `tier`/`status`/
-    `currentPeriodEnd` (via a PostgREST embed on `subscribers`), which
-    `account.html` renders.
+    `currentPeriodEnd`/`projectsUsed`/`projectsCap` (via a PostgREST
+    embed on `subscribers` plus a computed count of that period's
+    `briefs`), which `account.html` renders.
+  - `create-portal-session.js` — `POST /api/create-portal-session` —
+    same cookie auth as the subscriber-auth files. Looks up the
+    subscriber's `stripe_customer_id` and creates a real Stripe Customer
+    Portal session, returning `{portalUrl}`. Backs `account.html`'s
+    "Manage subscription" button. Requires the Customer Portal to be
+    turned on in the Stripe dashboard (Settings → Billing → Customer
+    portal) — this endpoint just creates a session against whatever's
+    configured there, it doesn't configure it.
 - `Research/` — competitive research, notes, and the backend architecture
   proposal (now annotated with what's actually built vs. still planned).
 - `Moodboards/` — visual inspiration (currently empty).
@@ -185,8 +194,18 @@ preview state shows "Included in your plan" instead of a "Pay balance"
 button. `api/dashboard-data.js` needed no changes — it already passes
 `payment_status` through untouched.
 
-Still to come: a real Stripe Customer Portal link behind "Manage
-subscription" (currently disabled, "Coming soon").
+"Manage subscription" now opens a real Stripe Customer Portal session
+(`api/create-portal-session.js`) — self-serve cancel/plan-change/card
+update, all handled by Stripe's own hosted UI, not custom-built here.
+`api/stripe-webhook.js`'s `handleSubscriptionUpdated`/`handleSubscriptionDeleted`
+already covered keeping `status`/period dates in sync for whatever a
+subscriber does there — nothing new needed on that side.
+
+All six build phases are done. Remaining: switching `STRIPE_SECRET_KEY`/
+`STRIPE_WEBHOOK_SECRET` to live values once Stripe approves the account
+for live payments (their review, not build time) — see
+`Research/pricing-tier-decisions.md` for the pricing reasoning, unrelated
+to this technical step.
 
 ## Database (Supabase)
 
