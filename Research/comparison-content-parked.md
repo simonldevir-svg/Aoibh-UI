@@ -1,6 +1,12 @@
 # Competitor Comparison Content — Parked
 
-Status: **Not now. Revisit once real client results exist.**
+Status: **A safe version built 2026-09-22** — `journal/aoibh-vs-design-pickle.html`.
+Captures the "vs Design Pickle" search term for SEO, but makes zero factual
+claims about Design Pickle (or any competitor) that could go stale or need
+verification — it's a buyer's-checklist format ("what to ask any design
+subscription") answered with Aoibh's own real facts only. The original
+concern below — a comparison *chart* asserting specific claims about a
+named competitor — is still parked for the same reasons.
 
 ## The idea
 
