@@ -461,7 +461,7 @@
           <li>Enterprise security</li>
           <li>Up to 6 projects per month included, more available on negotiated terms</li>
         </ul>
-        <a class="btn btn-ghost pricing-cta" href="#cta">Talk to us</a>
+        <a class="btn btn-ghost pricing-cta" href="#cta" id="enterpriseTalkToUsBtn">Talk to us</a>
       </div>
     </div>
 
@@ -1881,6 +1881,8 @@
     if (contactLink) contactLink.addEventListener('click', (e) => { e.preventDefault(); openContact(); });
     const talkToStudioBtn = document.getElementById('talkToStudioBtn');
     if (talkToStudioBtn) talkToStudioBtn.addEventListener('click', (e) => { e.preventDefault(); openContact(); });
+    const enterpriseTalkToUsBtn = document.getElementById('enterpriseTalkToUsBtn');
+    if (enterpriseTalkToUsBtn) enterpriseTalkToUsBtn.addEventListener('click', (e) => { e.preventDefault(); openContact(); });
     closeBtn.addEventListener('click', closeContact);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeContact(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('open')) closeContact(); });
