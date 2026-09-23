@@ -120,7 +120,7 @@ export default async function handler(req, res) {
           "Content-Type": "application/json",
           Prefer: "return=representation",
         },
-        body: JSON.stringify({ status: "delivered" }),
+        body: JSON.stringify({ status: "delivered", pipeline_stage: "delivered" }),
       }
     );
     if (!patchRes.ok) {

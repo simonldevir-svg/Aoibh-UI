@@ -18,8 +18,10 @@ what's actually here.
   `?id=<uuid>&email=<email>` via `api/dashboard-data.js` (email must match
   the brief's stored email — no login, but no longer just a bare uuid
   either). Renders deposit/in-progress/delivered states off
-  `payment_status`. The pipeline status card is a placeholder — no live
-  8-stage tracking wired yet.
+  `payment_status`. Also shows a real 8-stage pipeline tracker
+  (`#pipelineCard`, `renderPipelineTrack()`) driven by `briefs.pipeline_stage`
+  — a separate axis from `payment_status`, shown alongside the payment
+  status chip, not instead of it. Advanced via `upload.html` / `api/advance-stage.js`.
 - `login.html` — staff sign-in: enter your email, get a magic link.
   Wired to the header's "Sign in" link on `index.html`.
 - `staff.html` — post-login hub, links to the tools below. Redirects to
@@ -75,15 +77,26 @@ what's actually here.
     keep a subscriber's `status`/`current_period_start`/`current_period_end`
     in sync on renewal, plan change, or cancellation. Emails the client
     when the trial deposit clears.
-  - `upload-deliverable.js` — `POST /api/upload-deliverable` — requires
-    `x-admin-secret` matching `SITE_MODE_ADMIN_SECRET`. Also emails the
-    client on the first preview of a review round (not every preview —
-    one "it's ready" per round, not one per image)
-  - `mark-delivered.js` — `POST /api/mark-delivered` — same
-    `x-admin-secret` gate. Sets `briefs.status = 'delivered'` (requires at
-    least one `deliverables` row to already exist) and emails the client.
-    Replaces hand-editing status in Supabase's table editor — triggered
-    from the "Mark as delivered" button in `upload.html`
+  - `upload-deliverable.js` — `POST /api/upload-deliverable` — staff-
+    session gated (stale note removed: this used to require
+    `x-admin-secret`, migrated to `aoibh_staff_session` alongside the
+    rest of staff auth). Also emails the client on the first preview of a
+    review round (not every preview — one "it's ready" per round, not one
+    per image)
+  - `mark-delivered.js` — `POST /api/mark-delivered` — same staff-session
+    gate. Sets `briefs.status = 'delivered'` and `pipeline_stage =
+    'delivered'` (requires at least one `deliverables` row to already
+    exist) and emails the client. Replaces hand-editing status in
+    Supabase's table editor — triggered from the "Mark as delivered"
+    button in `upload.html`
+  - `advance-stage.js` — `POST /api/advance-stage` — same staff-session
+    gate. Body `{briefId, stage}`, `stage` restricted to the 7
+    non-terminal `pipeline_stage` values (`delivered` is rejected —
+    only `mark-delivered.js` sets that). Free-form correction allowed,
+    not forward-only, since the real pipeline loops (a second revision
+    round repeats `sent_to_client → changes_requested →
+    designer_revising → re_checked`). Triggered from the "Update stage"
+    control in `upload.html`; no client email (internal tracking only)
   - `contact.js` — `POST /api/contact` — writes to `contacts`, emails via
     Resend
   - `site-mode.js` — `GET/POST /api/site-mode` — reads/writes
@@ -221,7 +234,14 @@ proposed — see section 0 there for the full comparison:
   `subscriber_id` (nullable, FK to `subscribers`) — set when a project
   was started from a subscriber's account instead of the trial flow;
   those rows get `payment_status = 'covered_by_subscription'` instead of
-  the usual pending/deposit_paid/paid_in_full progression.
+  the usual pending/deposit_paid/paid_in_full progression. Also
+  `pipeline_stage` (`NOT NULL`, `CHECK`-constrained to 8 values —
+  `brief_received`/`matched`/`drafts_created`/`sent_to_client`/
+  `changes_requested`/`designer_revising`/`re_checked`/`delivered`) —
+  a separate axis from `payment_status`; set to `matched` at insert time
+  in `match-designer.js` (a designer is already picked by then), advanced
+  via `api/advance-stage.js`, and set to `delivered` only by
+  `api/mark-delivered.js` (the one place that value is ever set).
 - `contacts` — footer contact-form submissions. `id`, `created_at`,
   `query`, `email` only.
 - `deliverables` — file pointers (`brief_id`, `file_name`, `file_url`),
@@ -281,9 +301,12 @@ network misbehaves. Keep that convention in any new endpoint.
 
 See `Research/backend-architecture-proposal.md` section 0 for the full,
 current reconciliation of what's built vs. planned. Sections 1–10 of that
-document remain the best reference for what *isn't* built yet: formal
-8-stage pipeline tracking, dashboard chat, per-designer staff accounts,
-client auth, and marketing consent capture.
+document remain the best reference for what *isn't* built yet: dashboard
+chat, per-designer staff accounts, real login for trial clients (they
+still only access `dashboard.html` via id+email, unlike subscribers who
+now have real accounts — see Subscriptions below), and marketing consent
+capture. Formal 8-stage pipeline tracking (2026-09-23) is now built — see
+the `dashboard.html` and `briefs` bullets above.
 
 Staff auth (2026-09-18) is admin-only by design — a single allowlisted
 email (`STAFF_ADMIN_EMAIL`), magic link, no passwords. Designers don't

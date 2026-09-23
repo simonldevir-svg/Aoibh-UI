@@ -212,6 +212,7 @@ async function saveBrief({ email, name, answers, result, artDirectorRoster, subs
           confidence: result.confidence,
           source: result.source,
           art_director_id: artDirector.id,
+          pipeline_stage: "matched",
           ...(subscriberId ? { subscriber_id: subscriberId, payment_status: "covered_by_subscription" } : {}),
         }),
       });

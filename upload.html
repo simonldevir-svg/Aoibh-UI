@@ -88,6 +88,23 @@
 
   <hr style="margin:2.5rem 0; border:none; border-top:1px solid #e5e4e0;">
 
+  <h1 style="font-size:1.15rem;">Update pipeline stage</h1>
+  <p class="field-hint" style="margin-top:0;">Uses the Project ID above. Updates the stage tracker on the client's dashboard — does not notify the client.</p>
+  <label for="stageSelect">Stage</label>
+  <select id="stageSelect">
+    <option value="brief_received">Brief received</option>
+    <option value="matched">Matched to a designer</option>
+    <option value="drafts_created">First drafts created</option>
+    <option value="sent_to_client">Samples sent to client</option>
+    <option value="changes_requested">Changes requested</option>
+    <option value="designer_revising">Designer revising</option>
+    <option value="re_checked">Re-checked</option>
+  </select>
+  <button id="advanceStageBtn">Update stage</button>
+  <div id="stageStatusMsg"></div>
+
+  <hr style="margin:2.5rem 0; border:none; border-top:1px solid #e5e4e0;">
+
   <h1 style="font-size:1.15rem;">Mark project as complete</h1>
   <p class="subtitle">Uses the Project ID above. Reveals all uploaded deliverables on the client's dashboard and emails them that it's ready — requires at least one final deliverable already uploaded.</p>
   <button id="markDeliveredBtn" style="background:#1a8a4a;">Mark as delivered &amp; notify client</button>
@@ -249,6 +266,45 @@
     } finally {
       markDeliveredBtn.disabled = false;
       markDeliveredBtn.textContent = 'Mark as delivered & notify client';
+    }
+  });
+
+  const advanceStageBtn = document.getElementById('advanceStageBtn');
+  const stageSelect = document.getElementById('stageSelect');
+  const stageStatusMsg = document.getElementById('stageStatusMsg');
+
+  advanceStageBtn.addEventListener('click', async () => {
+    const briefId = briefIdInput.value.trim();
+    stageStatusMsg.textContent = '';
+    stageStatusMsg.className = '';
+
+    if (!briefId) {
+      stageStatusMsg.textContent = 'Please paste a project (brief) ID above.';
+      stageStatusMsg.className = 'error';
+      return;
+    }
+
+    advanceStageBtn.disabled = true;
+    advanceStageBtn.textContent = 'Updating…';
+
+    try {
+      const res = await fetch('/api/advance-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ briefId, stage: stageSelect.value }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to update stage');
+
+      stageStatusMsg.textContent = 'Done — the client\'s dashboard now shows this stage.';
+      stageStatusMsg.className = 'success';
+    } catch (err) {
+      stageStatusMsg.textContent = err.message;
+      stageStatusMsg.className = 'error';
+    } finally {
+      advanceStageBtn.disabled = false;
+      advanceStageBtn.textContent = 'Update stage';
     }
   });
 </script>

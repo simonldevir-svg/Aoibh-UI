@@ -158,6 +158,7 @@ export default async function handler(req, res) {
       source: brief.source,
       createdAt: brief.created_at,
       status: brief.status || "in_progress",
+      pipelineStage: brief.pipeline_stage || "brief_received",
       deliverables: deliverables.map((d) => ({ name: d.file_name, url: d.file_url, size: d.file_size || null })),
 
       // Trial payment state — drives which screen dashboard.html shows.

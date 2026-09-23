@@ -61,6 +61,25 @@
   .status-dot.blue { background: var(--blue); }
   .status-dot.green { background: var(--green); }
 
+  .pipeline-card { background: var(--card-grey); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem 1.5rem 1.25rem; margin-bottom: 1.75rem; }
+  .pipeline-track { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 6px; padding-top: 4px; }
+  .pipeline-line { position: absolute; top: 16px; left: 16px; right: 16px; height: 3px; background: var(--border); z-index: 0; border-radius: 2px; overflow: hidden; }
+  .pipeline-line-fill { height: 100%; width: 0%; background: var(--green); border-radius: 2px; transition: width .5s ease; }
+  .pipeline-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-right: 6px; }
+  .pipeline-dot { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box; }
+  .pipeline-check { opacity: 0; font-size: 13px; color: #fff; }
+  .pipeline-step.done .pipeline-dot { background: var(--green); border-color: var(--green); }
+  .pipeline-step.done .pipeline-check { opacity: 1; }
+  .pipeline-step.current .pipeline-dot { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 0 4px rgba(47,91,224,0.18); }
+  .pipeline-label strong { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .pipeline-label span { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+  .pipeline-step.upcoming .pipeline-label strong { color: var(--muted); }
+
+  @media (max-width: 800px) {
+    .pipeline-track { grid-template-columns: repeat(4, minmax(0,1fr)); row-gap: 20px; }
+    .pipeline-line { display: none; }
+  }
+
   .row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -209,6 +228,10 @@
     <span id="statusText"></span>
   </div>
 
+  <div class="pipeline-card" id="pipelineCard" style="display:none;">
+    <div class="pipeline-track" id="pipelineTrack"></div>
+  </div>
+
   <div id="loadingState" class="loading">Loading your project…</div>
   <div id="errorState" class="error-state" style="display:none;"></div>
 
@@ -305,6 +328,31 @@
     document.getElementById("statusChip").style.display = "inline-flex";
     document.getElementById("statusDot").className = "status-dot " + dot;
     document.getElementById("statusText").textContent = text;
+  }
+
+  const PIPELINE_STAGES = [
+    { key: "brief_received",    label: "Brief received",        sub: "Aoibh breaks it into a 2-day plan" },
+    { key: "matched",           label: "Matched to a designer", sub: "The right specialist is assigned from the network" },
+    { key: "drafts_created",    label: "First drafts created",  sub: "Design samples are produced by hand" },
+    { key: "sent_to_client",    label: "Samples sent to you",   sub: "You review the first directions" },
+    { key: "changes_requested", label: "Changes requested",     sub: "You flag what needs adjusting" },
+    { key: "designer_revising", label: "Designer revises",      sub: "The chosen direction is updated" },
+    { key: "re_checked",        label: "Re-checked",            sub: "Art director + AI verify brand and quality" },
+    { key: "delivered",         label: "Delivered & paid",      sub: "Final assets ship, invoice settled" },
+  ];
+
+  function renderPipelineTrack(pipelineStage) {
+    const currentIndex = Math.max(0, PIPELINE_STAGES.findIndex((s) => s.key === pipelineStage));
+    const track = document.getElementById("pipelineTrack");
+    track.innerHTML = `<div class="pipeline-line"><div class="pipeline-line-fill" style="width:${(currentIndex / (PIPELINE_STAGES.length - 1)) * 100}%"></div></div>`
+      + PIPELINE_STAGES.map((s, i) => {
+          const state = i < currentIndex ? "done" : i === currentIndex ? "current" : "upcoming";
+          return `<div class="pipeline-step ${state}">
+            <div class="pipeline-dot"><span class="pipeline-check">✓</span></div>
+            <div class="pipeline-label"><strong>${s.label}</strong><span>${s.sub}</span></div>
+          </div>`;
+        }).join("");
+    document.getElementById("pipelineCard").style.display = "block";
   }
 
   function renderPeopleRow(data) {
@@ -537,6 +585,7 @@
 
       titleEl.textContent = (data.answers && data.answers.project) || "Your project";
       renderPeopleRow(data);
+      renderPipelineTrack(data.pipelineStage || "brief_received");
 
       const isDelivered = data.status === "delivered" && Array.isArray(data.deliverables) && data.deliverables.length > 0;
       const paymentStatus = data.paymentStatus || "pending";
