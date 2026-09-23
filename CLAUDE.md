@@ -225,7 +225,9 @@ proposed — see section 0 there for the full comparison:
 - `contacts` — footer contact-form submissions. `id`, `created_at`,
   `query`, `email` only.
 - `deliverables` — file pointers (`brief_id`, `file_name`, `file_url`),
-  written by `upload-deliverable.js`.
+  written by `upload-deliverable.js`. `brief_id` FK is `ON DELETE CASCADE`
+  (fixed 2026-09-23) — deleting a `briefs` row cleans up its deliverables
+  automatically instead of blocking the delete.
 - `site_settings` — single-row site mode config. Fixed 2026-09-04 (was
   missing a `GRANT` for `service_role`, which made every mode-switch read
   silently fail open to `"live"`).
@@ -238,7 +240,8 @@ proposed — see section 0 there for the full comparison:
 - `qa_checks` — one row per AI quality check on an uploaded image
   (`kind`: `preview` | `deliverable`). Written by `upload-deliverable.js`
   whenever an image file is uploaded; reviewed via `qa-review.html` /
-  `api/qa-review.js`.
+  `api/qa-review.js`. `brief_id` FK is also `ON DELETE CASCADE` (same
+  2026-09-23 fix as `deliverables`, same reason).
 - `magic_links` — single-use staff sign-in tokens (`token`, `email`,
   `expires_at`, `used_at`). Written by `auth-request.js`, consumed by
   `auth-verify.js`.
