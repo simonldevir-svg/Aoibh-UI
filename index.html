@@ -414,8 +414,9 @@
     <div class="pricing-grid">
       <div class="pricing-card reveal">
         <div class="pricing-name">Starter</div>
-        <div class="pricing-price">€1,250<span>/month</span></div>
+        <div class="pricing-price">€995<span>/month</span></div>
         <p class="pricing-audience">Startups, small agencies, marketing teams</p>
+        <div class="pricing-guarantee">No contract. Cancel anytime.</div>
         <ul class="pricing-features">
           <li>Aoibh, your AI project manager</li>
           <li>Matched from a growing global talent network at 80%+ confidence</li>
@@ -423,7 +424,7 @@
           <li>Standard turnaround</li>
           <li>Live project tracker dashboard</li>
           <li>AI + human art director re-check on every delivery</li>
-          <li>Up to 2 rounds of revisions per project</li>
+          <li>Up to 3 rounds of revisions per project</li>
           <li>Email support</li>
         </ul>
         <a class="btn btn-ghost pricing-cta" href="#cta" data-tier="starter">Get started</a>
@@ -434,6 +435,7 @@
         <div class="pricing-name">Growth</div>
         <div class="pricing-price">€2,795<span>/month</span></div>
         <p class="pricing-audience">Growing agencies, SaaS companies, scale-ups</p>
+        <div class="pricing-guarantee">No contract. Cancel anytime.</div>
         <ul class="pricing-features">
           <li>Everything in Starter, plus:</li>
           <li>Up to 3 projects per month</li>
@@ -452,6 +454,7 @@
         <div class="pricing-price">From €5,595<span>/month</span></div>
         <p class="pricing-audience">Mid-size and large agencies, enterprise marketing teams, global software companies</p>
         <ul class="pricing-features">
+          <li>Everything in Growth, plus:</li>
           <li>Dedicated creative team</li>
           <li>Named client success manager</li>
           <li>Custom AI workflows</li>
@@ -1043,7 +1046,7 @@
     let lastBriefId = null;
     let projectDeadlineDate = null;
     let taskState = {}; // { [taskId]: { revisions: number, feedback: string[] } }
-    const REVISION_CAP = 2; // illustrative — matches the Starter plan's stated cap;
+    const REVISION_CAP = 3; // illustrative — matches the Starter plan's stated cap;
                              // a real build would look this up per the client's actual plan
 
     // ---------- Full designer profile modal ----------
