@@ -97,6 +97,17 @@ what's actually here.
     round repeats `sent_to_client → changes_requested →
     designer_revising → re_checked`). Triggered from the "Update stage"
     control in `upload.html`; no client email (internal tracking only)
+  - `messages.js` — `GET/POST /api/messages` — a project-scoped message
+    thread, open channel (no logistics/feedback restriction — same as
+    email today). The one dual-auth endpoint in this codebase: serves
+    both a client (`?id&email`, matched like `dashboard-data.js`) and
+    staff (session cookie, like `qa-review.js`) — a missing/invalid
+    staff cookie falls through to the client check rather than 401ing,
+    since both are valid callers here. `sender` (`client`|`staff`) is
+    always derived from whichever auth path succeeded, never trusted
+    from the request body. Emails the other side on every message (no
+    batching). Shown on `dashboard.html` (all 3 states) and replied to
+    via `upload.html`'s "Message thread" section
   - `contact.js` — `POST /api/contact` — writes to `contacts`, emails via
     Resend
   - `site-mode.js` — `GET/POST /api/site-mode` — reads/writes
@@ -262,6 +273,9 @@ proposed — see section 0 there for the full comparison:
   whenever an image file is uploaded; reviewed via `qa-review.html` /
   `api/qa-review.js`. `brief_id` FK is also `ON DELETE CASCADE` (same
   2026-09-23 fix as `deliverables`, same reason).
+- `messages` — one row per message in a project's thread (`brief_id`,
+  `sender`: `client`|`staff`, `body`, `created_at`), `brief_id` FK
+  `ON DELETE CASCADE` from creation. Written/read by `api/messages.js`.
 - `magic_links` — single-use staff sign-in tokens (`token`, `email`,
   `expires_at`, `used_at`). Written by `auth-request.js`, consumed by
   `auth-verify.js`.
@@ -301,12 +315,16 @@ network misbehaves. Keep that convention in any new endpoint.
 
 See `Research/backend-architecture-proposal.md` section 0 for the full,
 current reconciliation of what's built vs. planned. Sections 1–10 of that
-document remain the best reference for what *isn't* built yet: dashboard
-chat, per-designer staff accounts, real login for trial clients (they
-still only access `dashboard.html` via id+email, unlike subscribers who
-now have real accounts — see Subscriptions below), and marketing consent
-capture. Formal 8-stage pipeline tracking (2026-09-23) is now built — see
-the `dashboard.html` and `briefs` bullets above.
+document remain the best reference for what *isn't* built yet: per-designer
+staff accounts, real login for trial clients (they still only access
+`dashboard.html` via id+email, unlike subscribers who now have real
+accounts — see Subscriptions below), and marketing consent capture.
+Formal 8-stage pipeline tracking (2026-09-23) is now built — see the
+`dashboard.html` and `briefs` bullets above. In-dashboard messaging
+(2026-09-24) is also built — see `api/messages.js` above; deliberately
+simpler than section 6's original AI-mediated design (open human-to-human
+channel instead, no logistics/feedback classification — see that file's
+header comment for the reasoning).
 
 Staff auth (2026-09-18) is admin-only by design — a single allowlisted
 email (`STAFF_ADMIN_EMAIL`), magic link, no passwords. Designers don't

@@ -26,7 +26,26 @@
     box-sizing: border-box;
     background: #fff;
   }
+  textarea {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #e5e4e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+  }
   .field-hint { font-size: 0.8rem; color: #6b6a66; margin: -1.2rem 0 1.5rem; }
+  #messagesLog { margin-bottom: 1.5rem; max-height: 320px; overflow-y: auto; }
+  .message-item { border: 1px solid #e5e4e0; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.6rem; font-size: 0.9rem; line-height: 1.5; }
+  .message-item .message-sender { font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  .message-item.client .message-sender { color: #2a6df5; }
+  .message-item.staff .message-sender { color: #1a8a4a; }
+  .message-item .message-time { font-size: 0.75rem; color: #6b6a66; float: right; }
+  .message-item .message-body { margin-top: 4px; white-space: pre-wrap; }
   .dropzone {
     border: 1.5px dashed #d9d3ff;
     background: #faf6ff;
@@ -109,6 +128,21 @@
   <p class="subtitle">Uses the Project ID above. Reveals all uploaded deliverables on the client's dashboard and emails them that it's ready — requires at least one final deliverable already uploaded.</p>
   <button id="markDeliveredBtn" style="background:#1a8a4a;">Mark as delivered &amp; notify client</button>
   <div id="deliveredStatusMsg"></div>
+
+  <hr style="margin:2.5rem 0; border:none; border-top:1px solid #e5e4e0;">
+
+  <h1 style="font-size:1.15rem;">Message thread</h1>
+  <p class="subtitle">Uses the Project ID above. Open channel — clients can ask about anything, same as email today.</p>
+
+  <button id="loadMessagesBtn">Load messages</button>
+  <div id="messagesStatusMsg"></div>
+  <div id="messagesEmptyState" style="display:none;">No messages yet.</div>
+  <div id="messagesLog"></div>
+
+  <label for="replyInput">Reply</label>
+  <textarea id="replyInput" placeholder="Reply to the client…"></textarea>
+  <button id="sendReplyBtn">Send reply</button>
+  <div id="replyStatusMsg"></div>
 </div>
 
 <script>
@@ -305,6 +339,101 @@
     } finally {
       advanceStageBtn.disabled = false;
       advanceStageBtn.textContent = 'Update stage';
+    }
+  });
+
+  const loadMessagesBtn = document.getElementById('loadMessagesBtn');
+  const messagesStatusMsg = document.getElementById('messagesStatusMsg');
+  const messagesEmptyState = document.getElementById('messagesEmptyState');
+  const messagesLog = document.getElementById('messagesLog');
+
+  function renderMessageLog(messages) {
+    messagesLog.innerHTML = '';
+    messagesEmptyState.style.display = messages.length === 0 ? 'block' : 'none';
+    messages.forEach((m) => {
+      const el = document.createElement('div');
+      el.className = 'message-item ' + m.sender;
+      el.innerHTML = `
+        <span class="message-time">${new Date(m.createdAt).toLocaleString()}</span>
+        <div class="message-sender">${m.sender}</div>
+        <div class="message-body">${m.body.replace(/</g,'&lt;')}</div>
+      `;
+      messagesLog.appendChild(el);
+    });
+  }
+
+  async function loadMessages() {
+    const briefId = briefIdInput.value.trim();
+    messagesStatusMsg.textContent = '';
+    messagesStatusMsg.className = '';
+
+    if (!briefId) {
+      messagesStatusMsg.textContent = 'Please paste a project (brief) ID above.';
+      messagesStatusMsg.className = 'error';
+      return;
+    }
+
+    loadMessagesBtn.disabled = true;
+    loadMessagesBtn.textContent = 'Loading…';
+
+    try {
+      const res = await fetch(`/api/messages?id=${encodeURIComponent(briefId)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load messages');
+      renderMessageLog(data.messages || []);
+    } catch (err) {
+      messagesStatusMsg.textContent = err.message;
+      messagesStatusMsg.className = 'error';
+    } finally {
+      loadMessagesBtn.disabled = false;
+      loadMessagesBtn.textContent = 'Load messages';
+    }
+  }
+  loadMessagesBtn.addEventListener('click', loadMessages);
+
+  const replyInput = document.getElementById('replyInput');
+  const sendReplyBtn = document.getElementById('sendReplyBtn');
+  const replyStatusMsg = document.getElementById('replyStatusMsg');
+
+  sendReplyBtn.addEventListener('click', async () => {
+    const briefId = briefIdInput.value.trim();
+    const body = replyInput.value.trim();
+    replyStatusMsg.textContent = '';
+    replyStatusMsg.className = '';
+
+    if (!briefId) {
+      replyStatusMsg.textContent = 'Please paste a project (brief) ID above.';
+      replyStatusMsg.className = 'error';
+      return;
+    }
+    if (!body) {
+      replyStatusMsg.textContent = 'Please write a reply first.';
+      replyStatusMsg.className = 'error';
+      return;
+    }
+
+    sendReplyBtn.disabled = true;
+    sendReplyBtn.textContent = 'Sending…';
+
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ briefId, body }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send reply');
+
+      replyInput.value = '';
+      replyStatusMsg.textContent = 'Sent — the client has been emailed.';
+      replyStatusMsg.className = 'success';
+      await loadMessages();
+    } catch (err) {
+      replyStatusMsg.textContent = err.message;
+      replyStatusMsg.className = 'error';
+    } finally {
+      sendReplyBtn.disabled = false;
+      sendReplyBtn.textContent = 'Send reply';
     }
   });
 </script>
