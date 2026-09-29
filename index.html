@@ -189,7 +189,7 @@
         <div class="dots"><span></span><span></span><span></span></div>
       </div>
       <div class="feed-cols">
-        <span>Job</span><span>Stage</span><span>Handled by</span><span>Node</span><span>Updated</span>
+        <span>Job</span><span>Stage</span><span>Handled by</span><span>Updated</span>
       </div>
       <div class="feed-viewport">
         <div class="feed-track" id="feedTrack"></div>
@@ -859,11 +859,6 @@
     "MERIDIAN", "ORSON", "BRAVEN & CO", "NOVA STUDIO", "ECHELON", "PALOMA",
     "DRIFTWOOD", "KESTREL", "ARBOR", "SILT & SALT",
   ];
-  const CITIES = [
-    "Berlin", "Warsaw", "Zurich", "Belfast", "Manchester", "San Francisco",
-    "Bucharest", "Melbourne", "Paris", "Copenhagen", "Dublin", "Milan",
-    "Barcelona", "Seville", "Malmö", "Sydney", "Naples", "Bursa", "Kraków",
-  ];
   // Kept to exactly these four combinations — each maps to real CSS classes
   // (.stagepill.ship/.draft/.review/.brief, .tagpill.ai/.human) so the
   // generator can't produce a stage/who pairing the styling doesn't handle.
@@ -910,7 +905,6 @@
         stageLabel: cfg.stageLabel,
         who: cfg.who,
         who2: cfg.who2,
-        node: cfg.hasNode ? pick(CITIES) : "—",
         time: formatTimeAgo(minutesAgo),
       });
       // Realistic pacing: tight gaps early (still "recent"), wider gaps as
@@ -933,7 +927,6 @@
         <div class="job">${j.job}<span class="client">${j.client}</span></div>
         <div class="stagepill ${j.stage}">${j.stageLabel}</div>
         <div class="tagpill ${whoClass}">${j.who}</div>
-        <div class="node">${j.node}</div>
         <div class="node">${j.time}</div>
       </div>`;
   }

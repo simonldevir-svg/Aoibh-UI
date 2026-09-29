@@ -223,7 +223,7 @@
 
   .feed-cols{
     display:grid;
-    grid-template-columns: 2.4fr 1.1fr 1fr 1fr 1fr;
+    grid-template-columns: 2.4fr 1.1fr 1fr 1fr;
     gap:12px;
     padding:12px 20px;
     font-family:var(--mono);
@@ -252,7 +252,7 @@
 
   .feed-row{
     display:grid;
-    grid-template-columns: 2.4fr 1.1fr 1fr 1fr 1fr;
+    grid-template-columns: 2.4fr 1.1fr 1fr 1fr;
     gap:12px;
     padding:14px 20px;
     align-items:center;
