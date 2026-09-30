@@ -342,6 +342,7 @@ approved colors/fonts today). The flagged-issues review page
 which doesn't exist yet — same `x-admin-secret` gate as everything else
 until real staff auth is built.
 
-`terms.html`, `privacy.html` — working drafts, both carry a visible
-"not yet reviewed by a lawyer" notice and bracketed placeholders. Fill
-those in and get real legal review before removing the draft notice.
+`terms.html`, `privacy.html` — both are now real, lawyer-reviewed
+documents with the real entity name/address (Aoibh Studio, 36 Woodville
+Road, London, N16 8NA) and no remaining placeholders or "not yet
+reviewed" notices.
