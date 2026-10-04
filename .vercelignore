@@ -1,0 +1,8 @@
+# Internal files that live in the repo but must not be published on aoibh.ai.
+# Vercel skips everything listed here when it deploys.
+Research/
+CLAUDE.md
+Moodboards/
+.gitattributes
+node_modules.gitignore.rtf
+.DS_Store
