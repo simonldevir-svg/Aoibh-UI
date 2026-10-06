@@ -1566,13 +1566,17 @@
       if (matchInProgress) return; // already matching — never let two overlap
       matchInProgress = true;
 
+      matchFailed = false;
       reviewDesigner.className = 'review-designer loading';
       reviewDesigner.textContent = 'Matching you with a designer from the marketplace…';
+      approveBtn.style.display = '';
 
-      let data;
+      let data = null;
+      let failMsg = null;      // a plain-English reason from the server, if it gave one
+      let failFinal = false;   // true when retrying can't help (e.g. plan limit reached)
       try {
         const controller = new AbortController();
-        const t = setTimeout(() => controller.abort(), 8000);
+        const t = setTimeout(() => controller.abort(), 15000);
         const r = await fetch('/api/match-designer', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -1580,19 +1584,29 @@
           signal: controller.signal,
         });
         clearTimeout(t);
-        if (!r.ok) throw new Error('bad response');
+        if (!r.ok) {
+          if (r.status === 403) {
+            const j = await r.json().catch(() => ({}));
+            failMsg = j.error || null;
+            failFinal = true;
+          }
+          throw new Error('bad response');
+        }
         data = await r.json();
         if (!data || !data.designer || !data.designer.name) throw new Error('malformed response');
         if (typeof data.confidence !== 'number') throw new Error('missing confidence');
       } catch (err) {
-        // No server reachable (e.g. this file opened directly), the
-        // endpoint errored, or the response was malformed/missing a
-        // confidence score — match locally instead of leaving the card
-        // out entirely.
-        data = localFallbackMatch(answers);
+        data = null;
       }
 
       matchInProgress = false;
+
+      // No project id means nothing was saved, so never show a match the client
+      // can't act on: say so plainly and offer a retry or an email instead.
+      if (!data || !data.briefId) {
+        showMatchFailure(failMsg, failFinal);
+        return;
+      }
 
       const d = data.designer;
       const confidence = Math.round(data.confidence);
@@ -1643,6 +1657,26 @@
       
       }
      }
+    }
+
+    let matchFailed = false;
+    function showMatchFailure(msg, final){
+      matchFailed = true;
+      matchedDesigner = null;
+      lastBriefId = null;
+      document.getElementById('reviewJobNumber').style.display = 'none';
+      reviewDesigner.className = 'review-designer';
+      const reason = msg
+        ? msg
+        : "Something went wrong on our side, so your brief hasn't been saved yet. Please try again, or email it to us and we'll take it from there.";
+      reviewDesigner.innerHTML = `
+        <div>
+          <span class="designer-tag">We couldn't save your brief</span>
+          <div class="designer-reason">${reason.replace(/</g,'&lt;')}</div>
+        </div>`;
+      approveBtn.textContent = 'Try again →';
+      approveBtn.style.display = final ? 'none' : '';
+      emailBtn.style.display = '';
     }
 
     function openBrief(){
@@ -1698,8 +1732,11 @@
 
     closeBtn.addEventListener('click', closeBrief);
     restartBtn.addEventListener('click', resetChat);
-   approveBtn.addEventListener('click', () => { if (lastBriefId) { window.location.href = `/dashboard.html?id=${encodeURIComponent(lastBriefId)}&email=${encodeURIComponent(lastBriefEmail || contact.email)}`; } else { openStudio(); } });
-    emailBtn.addEventListener('click', (e) => { e.preventDefault(); reviewDesigner.insertAdjacentHTML('afterend', '<div class="review-email-confirm">Got it — we\'ve already received your brief and will follow up by email shortly.</div>'); emailBtn.style.display = 'none'; });
+   approveBtn.addEventListener('click', () => {
+      if (matchFailed) { matchFailed = false; matchDesigner(); return; }
+      if (lastBriefId) { window.location.href = `/dashboard.html?id=${encodeURIComponent(lastBriefId)}&email=${encodeURIComponent(lastBriefEmail || contact.email)}`; }
+    });
+    emailBtn.addEventListener('click', (e) => { if (matchFailed) return; e.preventDefault(); reviewDesigner.insertAdjacentHTML('afterend', '<div class="review-email-confirm">Got it — we\'ve already received your brief and will follow up by email shortly.</div>'); emailBtn.style.display = 'none'; });
   
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) closeBrief(); });
