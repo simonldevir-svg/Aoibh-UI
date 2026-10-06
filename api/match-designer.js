@@ -349,7 +349,7 @@ export default async function handler(req, res) {
   if (!apiKey) {
     const fallbackResult = fallbackMatch(answers, roster);
     const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId });
-    return res.status(200).json({ ...fallbackResult, briefId, jobNumber });
+    return res.status(200).json({ ...fallbackResult, briefId, jobNumber, email });
   }
 
   const rosterForPrompt = roster.map(
@@ -427,7 +427,7 @@ Pick the designer now.`;
       source: "ai",
     };
     const { briefId, jobNumber } = await saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId });
-    return res.status(200).json({ ...result, briefId, jobNumber });
+    return res.status(200).json({ ...result, briefId, jobNumber, email });
   } catch (err) {
     // Network error, timeout, bad JSON, or an id not in the roster — always
     // fail soft to the deterministic match rather than leaving the client
@@ -435,6 +435,6 @@ Pick the designer now.`;
     console.error("match-designer failed:", err.message);
     const fallbackResult = fallbackMatch(answers, roster);
     const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId });
-    return res.status(200).json({ ...fallbackResult, briefId, jobNumber });
+    return res.status(200).json({ ...fallbackResult, briefId, jobNumber, email });
   }
 }

@@ -1048,6 +1048,7 @@
     let contact = { name: '', email: '' };
     let matchedDesigner = null;
     let lastBriefId = null;
+    let lastBriefEmail = null;
     let projectDeadlineDate = null;
     let taskState = {}; // { [taskId]: { revisions: number, feedback: string[] } }
     const REVISION_CAP = 3; // illustrative — matches the Starter plan's stated cap;
@@ -1596,6 +1597,9 @@
       const d = data.designer;
       const confidence = Math.round(data.confidence);
       lastBriefId = data.briefId || null;
+      // The server saves the brief under the signed-in subscriber's own email when there is one,
+      // so the dashboard link must use the email it returns, not the one typed into the chat.
+      lastBriefEmail = data.email || contact.email;
 
       const jobNumberEl = document.getElementById('reviewJobNumber');
       if (data.jobNumber){
@@ -1634,7 +1638,7 @@
         const dashBtn = document.getElementById('goToDashboardBtn');
         if (dashBtn) {
           dashBtn.addEventListener('click', () => {
-            window.location.href = `/dashboard.html?id=${encodeURIComponent(data.briefId)}&email=${encodeURIComponent(contact.email)}`;
+            window.location.href = `/dashboard.html?id=${encodeURIComponent(data.briefId)}&email=${encodeURIComponent(data.email || contact.email)}`;
           });
       
       }
@@ -1694,7 +1698,7 @@
 
     closeBtn.addEventListener('click', closeBrief);
     restartBtn.addEventListener('click', resetChat);
-   approveBtn.addEventListener('click', () => { if (lastBriefId) { window.location.href = `/dashboard.html?id=${encodeURIComponent(lastBriefId)}&email=${encodeURIComponent(contact.email)}`; } else { openStudio(); } });
+   approveBtn.addEventListener('click', () => { if (lastBriefId) { window.location.href = `/dashboard.html?id=${encodeURIComponent(lastBriefId)}&email=${encodeURIComponent(lastBriefEmail || contact.email)}`; } else { openStudio(); } });
     emailBtn.addEventListener('click', (e) => { e.preventDefault(); reviewDesigner.insertAdjacentHTML('afterend', '<div class="review-email-confirm">Got it — we\'ve already received your brief and will follow up by email shortly.</div>'); emailBtn.style.display = 'none'; });
   
 
