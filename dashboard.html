@@ -4,241 +4,198 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aoibh — Dashboard</title>
+<link rel="icon" href="assets/favicon/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family: 'Neue Machina'; src: url('assets/fonts/NeueMachina-Regular.woff') format('woff'); font-weight: 400; font-display: swap; }
   :root {
-    --blue: #2f5be0;
-    --blue-dark: #1e3fb0;
-    --ink: #16161a;
-    --muted: #6b7078;
-    --card-grey: #f4f4f6;
-    --page-bg: #ffffff;
-    --border: #ececf0;
-    --green: #1a8a4a;
-    --green-bg: #e3f6ea;
-    --amber: #b08d00;
-    --amber-bg: #fff6da;
+    --bg: #07080c; --panel: rgba(255,255,255,.045); --panel-2: rgba(255,255,255,.07); --line: rgba(255,255,255,.1);
+    --ink: #f2f3f7; --soft: #a3a9b6; --faint: #6a7080; --blue: #5b84ff; --cyan: #7fe0ff; --green: #3ddc84; --amber: #ffc24a; --red: #ff7a7a;
+    --mono: 'JetBrains Mono', ui-monospace, monospace; --sans: 'Inter', system-ui, -apple-system, sans-serif; --display: 'Neue Machina', Georgia, serif;
+    --ease: cubic-bezier(.16,1,.3,1);
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    color: var(--ink);
-    background: var(--page-bg);
-    padding: 2.5rem;
-  }
-  .wrap { max-width: 1100px; margin: 0 auto; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; min-height: 100vh; overflow-x: hidden; padding-bottom: 60px; }
+  .glow { position: fixed; inset: 0; z-index: -1; background:
+    radial-gradient(900px 500px at 85% -10%, rgba(91,132,255,.22), transparent 60%),
+    radial-gradient(700px 500px at -5% 40%, rgba(127,224,255,.10), transparent 60%),
+    radial-gradient(800px 600px at 60% 110%, rgba(150,90,255,.14), transparent 60%), var(--bg); }
+  .glow::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0, transparent 70%); mask-image: radial-gradient(ellipse at 50% 0%, #000 0, transparent 70%); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 36px; }
+  .mono { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
 
-  .topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
+  /* top bar */
+  .topbar { display: flex; align-items: center; justify-content: space-between; height: 72px; border-bottom: 1px solid var(--line); }
   .brand { display: flex; align-items: center; gap: 14px; }
-  .brand .logo { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
-  .pill {
-    background: var(--blue);
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 500;
-    padding: 0.4rem 1rem;
-    border-radius: 999px;
-  }
-  .project-title { font-size: 1.7rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .brand .logo { font-family: var(--display); font-size: 26px; letter-spacing: -.01em; }
+  .pill { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px; color: var(--soft); background: var(--panel); }
+  .me { font-size: 13px; color: var(--soft); }
 
-  .status-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 1.75rem;
-  }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .status-dot.amber { background: #e0a800; }
-  .status-dot.blue { background: var(--blue); }
-  .status-dot.green { background: var(--green); }
+  /* head */
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; padding: 46px 0 30px; flex-wrap: wrap; }
+  .project-title { font-family: var(--display); font-weight: 400; font-size: clamp(34px, 5vw, 64px); letter-spacing: -.025em; line-height: 1.02; margin-top: 14px; }
+  .head-r { display: flex; align-items: center; gap: 26px; }
+  .status-chip { display: inline-flex; align-items: center; gap: 9px; font: 500 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 9px 15px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--c, var(--blue)); animation: ping 2.2s infinite; }
+  .status-dot.amber { --c: var(--amber); } .status-dot.blue { --c: var(--blue); } .status-dot.green { --c: var(--green); }
+  @keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 10px transparent; } }
+  .big-num { font-family: var(--display); font-size: 46px; letter-spacing: -.03em; line-height: 1; text-align: right; }
+  .big-num small { display: block; font: 400 11px var(--mono); letter-spacing: .16em; color: var(--faint); margin-top: 8px; text-transform: uppercase; }
 
-  .pipeline-card { background: var(--card-grey); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem 1.5rem 1.25rem; margin-bottom: 1.75rem; }
-  .pipeline-track { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap: 6px; padding-top: 4px; }
-  .pipeline-line { position: absolute; top: 16px; left: 16px; right: 16px; height: 3px; background: var(--border); z-index: 0; border-radius: 2px; overflow: hidden; }
-  .pipeline-line-fill { height: 100%; width: 0%; background: var(--green); border-radius: 2px; transition: width .5s ease; }
-  .pipeline-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-right: 6px; }
-  .pipeline-dot { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box; }
-  .pipeline-check { opacity: 0; font-size: 13px; color: #fff; }
-  .pipeline-step.done .pipeline-dot { background: var(--green); border-color: var(--green); }
+  /* pipeline */
+  .pipeline-card { border: 1px solid var(--line); background: var(--panel); border-radius: 20px; padding: 26px 26px 22px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); margin-bottom: 20px; }
+  .pipeline-track { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+  .pipeline-line { position: absolute; top: 13px; left: 14px; right: 14px; height: 2px; background: var(--line); border-radius: 2px; z-index: 0; }
+  .pipeline-line-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--cyan)); box-shadow: 0 0 14px rgba(91,132,255,.7); border-radius: 2px; transition: width .8s var(--ease); }
+  .pipeline-step { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; padding-right: 6px; }
+  .pipeline-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--bg); border: 1.5px solid var(--line); display: grid; place-items: center; }
+  .pipeline-check { font-size: 12px; color: #07080c; opacity: 0; font-weight: 700; }
+  .pipeline-step.done .pipeline-dot { background: var(--cyan); border-color: var(--cyan); }
   .pipeline-step.done .pipeline-check { opacity: 1; }
-  .pipeline-step.current .pipeline-dot { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 0 4px rgba(47,91,224,0.18); }
-  .pipeline-label strong { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink); line-height: 1.3; }
-  .pipeline-label span { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
-  .pipeline-step.upcoming .pipeline-label strong { color: var(--muted); }
+  .pipeline-step.current .pipeline-dot { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 0 5px rgba(91,132,255,.22), 0 0 22px rgba(91,132,255,.9); animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 9px rgba(91,132,255,.08), 0 0 30px rgba(91,132,255,.9); } }
+  .pipeline-label strong { display: block; font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .pipeline-label span { display: block; font-size: 11px; color: var(--faint); line-height: 1.35; margin-top: 3px; }
+  .pipeline-step.upcoming .pipeline-label strong { color: var(--faint); }
+  .pipeline-step.current .pipeline-label strong { color: #fff; }
 
-  @media (max-width: 800px) {
-    .pipeline-track { grid-template-columns: repeat(4, minmax(0,1fr)); row-gap: 20px; }
+  /* layout */
+  .grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .col-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .team { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  #peopleRow .row.top { display: flex; flex-direction: column; gap: 14px; }
+  .card { border: 1px solid var(--line); background: var(--panel); border-radius: 20px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 18px; }
+  .row.bottom { display: flex; flex-direction: column; gap: 16px; }
+
+  /* people */
+  .av { position: relative; flex: none; z-index: 0; }
+  .av img { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; display: block; background: #1b1e27; }
+  .av::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; background: conic-gradient(var(--blue), var(--cyan), #a37bff, var(--blue)); z-index: -2; animation: spin 8s linear infinite; }
+  .av::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; background: var(--bg); z-index: -1; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .card.hero { padding: 20px; background: linear-gradient(160deg, rgba(91,132,255,.28), rgba(91,132,255,.06)); }
+  .hero .row-h { display: flex; align-items: center; gap: 14px; }
+  .role-label { font: 400 10.5px var(--mono); letter-spacing: .16em; color: var(--faint); text-transform: uppercase; }
+  .greet { font-family: var(--display); font-size: 24px; letter-spacing: -.02em; margin-top: 4px; }
+  .msg { font-size: 14px; line-height: 1.6; color: #d8dcea; margin-top: 14px; }
+  .card.info { display: flex; align-items: center; gap: 16px; padding: 16px 18px; }
+  .info .nm { font-size: 18px; font-weight: 600; letter-spacing: -.01em; margin-top: 3px; }
+  .info .sub { font-size: 12.5px; color: var(--soft); margin-top: 2px; }
+  .badge-match { display: inline-block; margin-top: 8px; font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--green); border: 1px solid rgba(61,220,132,.4); background: rgba(61,220,132,.1); padding: 3px 9px; border-radius: 99px; }
+
+  /* buttons */
+  .pay-btn, .unlock-btn { font: 600 14px var(--sans); color: #07080c; background: linear-gradient(120deg, #9db6ff, var(--cyan)); border: 0; border-radius: 99px; padding: 13px 26px; cursor: pointer; white-space: nowrap; box-shadow: 0 8px 30px rgba(91,132,255,.4); transition: transform .25s var(--ease); }
+  .pay-btn:hover, .unlock-btn:hover { transform: translateY(-2px); }
+  .pay-btn:disabled, .unlock-btn:disabled { opacity: .6; cursor: default; transform: none; }
+  .pay-error { color: var(--red); font-size: 13px; margin-top: 12px; display: none; }
+
+  /* deposit */
+  .card.deposit-cta { position: relative; overflow: hidden; text-align: center; padding: 56px 40px; min-height: 380px; display: grid; place-items: center; background: radial-gradient(600px 300px at 50% 0%, rgba(91,132,255,.22), transparent 70%), var(--panel); }
+  .deposit-cta > * { position: relative; }
+  .deposit-cta .title { font-family: var(--display); font-weight: 400; font-size: 30px; letter-spacing: -.02em; margin-bottom: 10px; }
+  .deposit-cta .sub { color: var(--soft); font-size: 14px; line-height: 1.6; max-width: 460px; margin: 0 auto; }
+  .deposit-cta .amount { font-family: var(--display); font-size: 64px; letter-spacing: -.03em; margin: 22px 0 4px; }
+  .deposit-cta .amount-sub { font: 400 11px var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; margin-bottom: 22px; }
+
+  /* preview viewer */
+  .card.preview { padding: 18px; }
+  .preview-top { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 14px; }
+  .preview-top .label { font: 500 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
+  .quality-tag { font: 500 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--amber); border: 1px solid rgba(255,194,74,.4); padding: 5px 10px; border-radius: 99px; background: rgba(255,194,74,.08); }
+  .image-frame { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 16/10; background: #000; border: 1px solid var(--line); }
+  .image-frame img { width: 100%; height: 100%; object-fit: cover; transition: opacity .2s; display: block; }
+  .image-frame .wm { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font: 600 clamp(28px, 5vw, 64px) var(--display); color: rgba(255,255,255,.3); -webkit-text-stroke: 1px rgba(0,0,0,.22); text-shadow: 0 2px 24px rgba(0,0,0,.25); letter-spacing: .2em; transform: rotate(-14deg); text-transform: uppercase; user-select: none; }
+  .corner { position: absolute; width: 18px; height: 18px; border: 0 solid rgba(255,255,255,.7); pointer-events: none; }
+  .corner.tl { top: 12px; left: 12px; border-top-width: 2px; border-left-width: 2px; } .corner.tr { top: 12px; right: 12px; border-top-width: 2px; border-right-width: 2px; }
+  .corner.bl { bottom: 12px; left: 12px; border-bottom-width: 2px; border-left-width: 2px; } .corner.br { bottom: 12px; right: 12px; border-bottom-width: 2px; border-right-width: 2px; }
+  .nav-a { position: absolute; top: 50%; width: 42px; height: 42px; margin-top: -21px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.45); backdrop-filter: blur(8px); color: #fff; cursor: pointer; font-size: 16px; }
+  .nav-a.l { left: 14px; } .nav-a.r { right: 14px; }
+  .image-frame .count { position: absolute; right: 16px; bottom: 14px; font: 500 11px var(--mono); letter-spacing: .14em; color: #fff; background: rgba(0,0,0,.55); backdrop-filter: blur(8px); padding: 6px 11px; border-radius: 99px; }
+  .thumb-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .thumb { width: 92px; height: 60px; border-radius: 9px; overflow: hidden; border: 1.5px solid transparent; opacity: .55; cursor: pointer; background: #000; transition: .25s var(--ease); }
+  .thumb.active { border-color: var(--blue); opacity: 1; box-shadow: 0 0 18px rgba(91,132,255,.45); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-caption { font-size: 12.5px; color: var(--faint); margin-top: 12px; }
+
+  /* unlock / finalizing / waiting */
+  .card.unlock { display: grid; grid-template-columns: 1fr auto; column-gap: 24px; align-items: center; padding: 18px 20px; border-color: rgba(91,132,255,.35); background: linear-gradient(120deg, rgba(91,132,255,.18), rgba(127,224,255,.06)); }
+  .unlock .title { font-weight: 600; font-size: 15px; grid-column: 1; }
+  .unlock .price { font-family: var(--display); font-size: 26px; letter-spacing: -.02em; grid-column: 1; margin-top: 4px; }
+  .unlock .price-note { font-size: 12.5px; color: var(--soft); grid-column: 1; margin-top: 2px; }
+  .unlock .unlock-btn { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+  .unlock .pay-error { grid-column: 1 / -1; }
+  .unlock-sub { font-size: 12.5px; color: var(--soft); grid-column: 1; margin-top: 8px; line-height: 1.5; }
+  .card.waiting { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--soft); font-size: 14.5px; min-height: 160px; }
+
+  /* delivered */
+  .complete-banner { display: flex; align-items: center; gap: 16px; border-color: rgba(61,220,132,.35); background: rgba(61,220,132,.08); padding: 18px 20px; }
+  .complete-banner .check { width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #07080c; display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
+  .complete-banner .text { font-size: 13.5px; line-height: 1.5; color: var(--soft); }
+  .complete-banner .text b { display: block; font-size: 15px; color: var(--ink); margin-bottom: 2px; }
+  .download-list { display: flex; flex-direction: column; gap: 10px; }
+  .download-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); background: var(--panel-2); border-radius: 12px; padding: 16px 18px; }
+  .fname { font-weight: 600; font-size: 14.5px; word-break: break-word; }
+  .fmeta { font: 400 11px var(--mono); color: var(--faint); letter-spacing: .1em; margin-top: 4px; text-transform: uppercase; }
+  .download-btn { font: 600 13px var(--sans); color: var(--ink); background: transparent; border: 1px solid rgba(255,255,255,.3); border-radius: 99px; padding: 9px 18px; cursor: pointer; transition: .25s; flex: none; }
+  .download-btn:hover { background: #fff; color: #000; }
+
+  .loading, .error-state { text-align: center; padding: 4rem 1rem; color: var(--soft); }
+  .error-state { color: var(--red); }
+
+  /* messages */
+  .messages-card { border: 1px solid var(--line); background: var(--panel); border-radius: 20px; padding: 18px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .messages-title { font: 500 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--faint); margin-bottom: 14px; }
+  .messages-thread { display: flex; flex-direction: column; gap: 9px; max-height: 300px; overflow-y: auto; padding-right: 4px; margin-bottom: 4px; }
+  .messages-empty { font-size: 13px; color: var(--soft); padding: 4px 0 8px; }
+  .message-bubble { max-width: 88%; padding: 10px 14px; font-size: 13px; line-height: 1.5; border-radius: 14px; white-space: pre-wrap; word-break: break-word; }
+  .message-bubble.staff { align-self: flex-start; background: var(--panel-2); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .message-bubble.client { align-self: flex-end; background: linear-gradient(120deg, #4469ee, #5b84ff); color: #fff; border-bottom-right-radius: 4px; }
+  .message-form { display: flex; gap: 10px; margin-top: 14px; }
+  .message-textarea { flex: 1; min-height: 46px; height: 46px; resize: none; background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 12px; color: var(--ink); padding: 12px 14px; font: 13px var(--sans); outline: none; }
+  .message-textarea:focus { border-color: var(--blue); }
+  .message-send-btn { border: 0; border-radius: 12px; background: var(--ink); color: #000; font: 600 13px var(--sans); padding: 0 18px; cursor: pointer; }
+  .message-send-btn:disabled { opacity: .6; cursor: default; }
+  .message-error { color: var(--red); font-size: 12.5px; margin-top: 10px; }
+
+  @media (max-width: 980px) {
+    .grid { grid-template-columns: 1fr; }
+    .head-r { width: 100%; justify-content: space-between; }
+    .pipeline-track { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 22px; }
     .pipeline-line { display: none; }
+    .wrap { padding: 0 18px; }
+    .card.unlock { grid-template-columns: 1fr; row-gap: 14px; }
+    .unlock .unlock-btn { grid-column: 1; grid-row: auto; justify-self: start; }
   }
-
-  .row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  .row.bottom { grid-template-columns: 2fr 1fr; }
-
-  .card {
-    background: var(--card-grey);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    min-height: 170px;
-  }
-
-  .card.hero {
-    background: linear-gradient(160deg, var(--blue) 0%, var(--blue-dark) 100%);
-    color: #fff;
-    border: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .hero-top { display: flex; align-items: center; justify-content: space-between; }
-  .hero-top .name { font-size: 1.3rem; font-weight: 700; }
-  .avatar { width: 68px; height: 68px; border-radius: 50%; background: rgba(255,255,255,0.25); border: 2px solid #fff; }
-  .avatar-round {
-    width: 68px; height: 68px; border-radius: 50%;
-    object-fit: cover; background: #dcdcdc; border: 2px solid #fff;
-  }
-  .greet { font-size: 1.05rem; font-weight: 600; margin-top: 1.5rem; }
-  .msg { font-size: 0.92rem; line-height: 1.5; margin-top: 0.4rem; opacity: 0.95; }
-
-  .card.info { display: flex; flex-direction: column; }
-  .info .top { display: flex; align-items: flex-start; justify-content: space-between; }
-  .role-label { font-size: 0.85rem; color: var(--muted); margin: 0 0 4px; }
-  .role-name { font-size: 1.35rem; font-weight: 700; margin: 0; }
-  .badge-match {
-    display: inline-block;
-    margin-top: 10px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--green);
-    background: var(--green-bg);
-    padding: 3px 10px;
-    border-radius: 999px;
-  }
-
-  /* Deposit CTA */
-  .card.deposit-cta { text-align: center; padding: 2.25rem 2rem; }
-  .deposit-cta .title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
-  .deposit-cta .sub { color: var(--muted); font-size: 0.92rem; line-height: 1.6; max-width: 480px; margin: 0 auto 1.5rem; }
-  .deposit-cta .amount { font-size: 2.1rem; font-weight: 700; }
-  .deposit-cta .amount-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
-
-  .pay-btn, .unlock-btn {
-    background: var(--blue);
-    color: #fff;
-    border: none;
-    border-radius: 999px;
-    padding: 0.8rem 2rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .pay-btn:disabled, .unlock-btn:disabled { opacity: 0.6; cursor: default; }
-  .pay-error { color: #c0392b; font-size: 0.85rem; margin-top: 1rem; display: none; }
-
-  /* Preview carousel + unlock */
-  .card.preview { display: flex; flex-direction: column; }
-  .preview-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
-  .preview-top .label { font-weight: 600; font-size: 0.95rem; }
-  .quality-tag {
-    font-size: 0.7rem; color: var(--muted); background: #fff;
-    border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px;
-  }
-  .image-frame {
-    background: #fff; border: 1px solid var(--border); border-radius: 12px;
-    overflow: hidden; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center;
-  }
-  .image-frame img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.15s; }
-  .thumb-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .thumb {
-    width: 64px; height: 42px; border-radius: 6px; overflow: hidden; cursor: pointer;
-    border: 2px solid transparent; opacity: 0.7;
-  }
-  .thumb.active { border-color: var(--blue); opacity: 1; }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .preview-caption { font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
-
-  .card.unlock { display: flex; flex-direction: column; justify-content: center; text-align: center; }
-  .unlock .title { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.5rem; }
-  .unlock .price { font-size: 1.5rem; font-weight: 700; }
-  .unlock .price-note { font-size: 0.78rem; color: var(--muted); margin-bottom: 1.25rem; }
-  .unlock-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.75rem; }
-
-  .card.waiting { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); font-size: 0.95rem; }
-
-  /* Complete state */
-  .complete-banner {
-    display: flex; align-items: center; gap: 1rem;
-    background: var(--green-bg); border: none;
-  }
-  .complete-banner .check {
-    width: 36px; height: 36px; border-radius: 50%; background: var(--green); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
-  }
-  .complete-banner .text { font-size: 0.92rem; line-height: 1.5; }
-  .complete-banner .text b { display: block; margin-bottom: 2px; }
-
-  .download-list { display: flex; flex-direction: column; gap: 0.75rem; }
-  .download-item {
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--card-grey); border: 1px solid var(--border); border-radius: 12px;
-    padding: 1rem 1.25rem;
-  }
-  .fname { font-weight: 600; font-size: 0.95rem; }
-  .fmeta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
-  .download-btn {
-    background: var(--ink); color: #fff; border: none; border-radius: 999px;
-    padding: 0.5rem 1.25rem; font-size: 0.85rem; cursor: pointer;
-  }
-
-  .loading, .error-state { text-align: center; padding: 4rem 1rem; color: var(--muted); }
-
-  .messages-card { background: var(--card-grey); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-top: 1rem; }
-  .messages-title { font-weight: 700; font-size: 1rem; margin-bottom: 1rem; }
-  .messages-thread { display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow-y: auto; margin-bottom: 1rem; }
-  .message-bubble { max-width: 78%; padding: 10px 14px; font-size: 0.88rem; line-height: 1.5; border-radius: 12px; white-space: pre-wrap; }
-  .message-bubble.staff { align-self: flex-start; background: var(--blue); color: #fff; border-bottom-left-radius: 3px; }
-  .message-bubble.client { align-self: flex-end; background: var(--ink); color: #fff; border-bottom-right-radius: 3px; }
-  .message-form { display: flex; gap: 10px; align-items: flex-end; }
-  .message-textarea { flex: 1; min-height: 60px; padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.9rem; resize: vertical; box-sizing: border-box; }
-  .message-send-btn { background: var(--blue); color: #fff; border: none; border-radius: 999px; padding: 0.7rem 1.4rem; font-size: 0.88rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
-  .message-send-btn:disabled { opacity: 0.6; cursor: default; }
-  .message-error { color: #c0392b; font-size: 0.8rem; margin-top: 0.6rem; }
-
-  @media (max-width: 800px) {
-    .row, .row.bottom { grid-template-columns: 1fr; }
-  }
+  @media (prefers-reduced-motion: reduce) { .av::before, .status-dot, .pipeline-step.current .pipeline-dot { animation: none; } }
 </style>
 </head>
 <body>
+<div class="glow"></div>
 <div class="wrap">
 
-  <div class="topbar">
+  <header class="topbar">
     <div class="brand">
       <span class="logo">Aoibh</span>
       <span class="pill">Dashboard</span>
     </div>
-    <h1 class="project-title" id="projectTitle">Loading project…</h1>
-  </div>
+    <div class="me" id="clientEmail"></div>
+  </header>
 
-  <div class="status-chip" id="statusChip" style="display:none;">
-    <span class="status-dot" id="statusDot"></span>
-    <span id="statusText"></span>
-  </div>
+  <section class="head">
+    <div>
+      <div class="mono">Your project</div>
+      <h1 class="project-title" id="projectTitle">Loading project…</h1>
+    </div>
+    <div class="head-r">
+      <div class="status-chip" id="statusChip" style="display:none;">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText"></span>
+      </div>
+      <div class="big-num" id="bigNum" style="display:none;"><span id="bigPct"></span><small>Stage <span id="stageNum"></span></small></div>
+    </div>
+  </section>
 
   <div class="pipeline-card" id="pipelineCard" style="display:none;">
     <div class="pipeline-track" id="pipelineTrack"></div>
@@ -247,77 +204,85 @@
   <div id="loadingState" class="loading">Loading your project…</div>
   <div id="errorState" class="error-state" style="display:none;"></div>
 
-  <div id="peopleRow" style="display:none;">
-    <div class="row top">
-      <div class="card hero">
-        <div class="hero-top">
-          <div class="name">Aoibh</div>
-          <img class="avatar-round" id="clientAvatar" src="assets/aoibh-avatar.jpg" alt="Aoibh">
-        </div>
-        <div class="greet" id="heroGreet">Hi there!</div>
-        <div class="msg" id="heroMsg"></div>
-      </div>
-      <div class="card info">
-        <div class="top">
+  <div class="grid">
+    <div class="col-main">
+
+      <!-- STATE 1: pending deposit -->
+      <div id="depositState" style="display:none;">
+        <div class="card deposit-cta">
           <div>
-            <p class="role-label" id="designerName">—</p>
-            <p class="role-name">Designer</p>
-            <span class="badge-match" id="matchBadge" style="display:none;">Strong match</span>
+            <div class="title">Let's get started</div>
+            <div class="sub" id="depositIntro">A 30% deposit kicks off your trial project. Work begins as soon as it clears — the remaining balance is only due once you've reviewed the preview.</div>
+            <div class="amount" id="depositAmount">—</div>
+            <div class="amount-sub">Deposit · 30% of €695</div>
+            <button class="pay-btn" id="payDepositBtn">Pay deposit</button>
+            <div class="pay-error" id="depositError"></div>
           </div>
-          <img class="avatar-round" id="designerAvatar" src="" alt="">
         </div>
       </div>
-      <div class="card info">
-        <div class="top">
-          <div>
-            <p class="role-label" id="artDirectorName">—</p>
-            <p class="role-name">Art Director</p>
+
+      <!-- STATE 2: in progress (deposit paid) -->
+      <div id="dashboardContent" style="display:none;">
+        <div class="row bottom" id="progressRow"></div>
+      </div>
+
+      <!-- STATE 3: complete -->
+      <div id="deliveredContent" style="display:none;">
+        <div class="col-main">
+          <div class="card complete-banner">
+            <div class="check">✓</div>
+            <div class="text" id="deliveredIntro"></div>
           </div>
-          <img class="avatar-round" id="artDirectorAvatar" src="" alt="">
+          <div class="download-list" id="deliveredFiles"></div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- STATE 1: pending deposit -->
-  <div id="depositState" style="display:none;">
-    <div class="row" style="grid-template-columns: 1fr;">
-      <div class="card deposit-cta">
-        <div class="title">Let's get started</div>
-        <div class="sub" id="depositIntro">A 30% deposit kicks off your trial project. Work begins as soon as it clears — the remaining balance is only due once you've reviewed the preview.</div>
-        <div class="amount" id="depositAmount">—</div>
-        <div class="amount-sub">Deposit · 30% of €695</div>
-        <button class="pay-btn" id="payDepositBtn">Pay deposit</button>
-        <div class="pay-error" id="depositError"></div>
+    </div>
+
+    <aside class="team">
+      <div id="peopleRow" style="display:none;">
+        <div class="row top">
+          <div class="card hero">
+            <div class="row-h">
+              <div class="av"><img id="clientAvatar" src="assets/aoibh-avatar.jpg" alt="Aoibh"></div>
+              <div>
+                <div class="role-label">Your project manager</div>
+                <div class="greet" id="heroGreet">Hi there!</div>
+              </div>
+            </div>
+            <div class="msg" id="heroMsg"></div>
+          </div>
+          <div class="card info">
+            <div class="av"><img id="designerAvatar" src="" alt=""></div>
+            <div>
+              <div class="role-label">Your designer</div>
+              <div class="nm" id="designerName">—</div>
+              <div class="sub" id="designerSub"></div>
+              <span class="badge-match" id="matchBadge" style="display:none;">Strong match</span>
+            </div>
+          </div>
+          <div class="card info">
+            <div class="av"><img id="artDirectorAvatar" src="" alt=""></div>
+            <div>
+              <div class="role-label">Art director</div>
+              <div class="nm" id="artDirectorName">—</div>
+              <div class="sub" id="artDirectorSub"></div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- STATE 2: in progress (deposit paid) -->
-  <div id="dashboardContent" style="display:none;">
-    <div class="row bottom" id="progressRow"></div>
-  </div>
-
-  <!-- STATE 3: complete -->
-  <div id="deliveredContent" style="display:none;">
-    <div class="row" style="grid-template-columns: 1fr; row-gap: 10px;">
-      <div class="card complete-banner">
-        <div class="check">✓</div>
-        <div class="text" id="deliveredIntro"></div>
+      <div class="messages-card" id="messagesCard" style="display:none;">
+        <div class="messages-title">Messages</div>
+        <div class="messages-thread" id="messagesThread"></div>
+        <div class="messages-empty" id="messagesEmpty" style="display:none;">No messages yet — ask us anything about your project.</div>
+        <div class="message-form">
+          <textarea class="message-textarea" id="messageInput" placeholder="Ask us anything about your project…"></textarea>
+          <button class="message-send-btn" id="sendMessageBtn">Send</button>
+        </div>
+        <div class="message-error" id="messageError" style="display:none;"></div>
       </div>
-      <div class="download-list" id="deliveredFiles"></div>
-    </div>
-  </div>
-
-  <div class="messages-card" id="messagesCard" style="display:none;">
-    <div class="messages-title">Messages</div>
-    <div class="messages-thread" id="messagesThread"></div>
-    <div class="messages-empty" id="messagesEmpty" style="display:none;">No messages yet — ask us anything about your project.</div>
-    <div class="message-form">
-      <textarea class="message-textarea" id="messageInput" placeholder="Ask us anything about your project…"></textarea>
-      <button class="message-send-btn" id="sendMessageBtn">Send</button>
-    </div>
-    <div class="message-error" id="messageError" style="display:none;"></div>
+    </aside>
   </div>
 
 </div>
@@ -377,6 +342,9 @@
           </div>`;
         }).join("");
     document.getElementById("pipelineCard").style.display = "block";
+    document.getElementById("bigPct").textContent = Math.round(((currentIndex + 1) / PIPELINE_STAGES.length) * 100) + "%";
+    document.getElementById("stageNum").textContent = (currentIndex + 1) + " / " + PIPELINE_STAGES.length;
+    document.getElementById("bigNum").style.display = "block";
   }
 
   function renderMessages(messages) {
@@ -444,6 +412,7 @@
       document.getElementById("designerName").textContent = data.designer.name;
       document.getElementById("designerAvatar").src = data.designer.img;
       document.getElementById("designerAvatar").alt = data.designer.name;
+      document.getElementById("designerSub").textContent = [data.designer.title, data.designer.location].filter(Boolean).join(" · ");
     }
     if (data.artDirector) {
       // dashboard-data.js guarantees a real art director (assigned at
@@ -454,6 +423,7 @@
       document.getElementById("artDirectorName").textContent = data.artDirector.name;
       document.getElementById("artDirectorAvatar").src = data.artDirector.img;
       document.getElementById("artDirectorAvatar").alt = data.artDirector.name;
+      document.getElementById("artDirectorSub").textContent = data.artDirector.location || "";
     }
     if (typeof data.confidence === "number" && data.confidence >= 80) {
       document.getElementById("matchBadge").style.display = "inline-block";
@@ -502,7 +472,12 @@
         <span class="label" id="previewLabel">${previews[0].label}</span>
         <span class="quality-tag">Preview quality</span>
       </div>
-      <div class="image-frame"><img id="mainPreviewImg" src="${previews[0].url}" alt="${previews[0].label}"></div>
+      <div class="image-frame">
+        <img id="mainPreviewImg" src="${previews[0].url}" alt="${previews[0].label}">
+        <div class="wm" aria-hidden="true">Preview</div>
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        ${previews.length > 1 ? '<button class="nav-a l" id="prevPreview" aria-label="Previous preview">←</button><button class="nav-a r" id="nextPreview" aria-label="Next preview">→</button><span class="count" id="previewCount"></span>' : ""}
+      </div>
       <div class="thumb-row" id="thumbRow"></div>
       <div class="preview-caption">Finished design at reduced quality — enough to review, not to use.</div>
     `;
@@ -520,6 +495,8 @@
         mainImg.style.opacity = 1;
       }, 120);
       labelEl.textContent = previews[i].label;
+      const countEl = wrap.querySelector("#previewCount");
+      if (countEl) countEl.textContent = (i + 1) + " / " + previews.length;
       thumbRow.querySelectorAll(".thumb").forEach((t, idx) => t.classList.toggle("active", idx === i));
     }
 
@@ -530,6 +507,13 @@
       thumb.addEventListener("click", () => showScreen(i));
       thumbRow.appendChild(thumb);
     });
+
+    const prevBtn = wrap.querySelector("#prevPreview");
+    const nextBtn = wrap.querySelector("#nextPreview");
+    if (prevBtn) prevBtn.addEventListener("click", () => showScreen((activeIndex + previews.length - 1) % previews.length));
+    if (nextBtn) nextBtn.addEventListener("click", () => showScreen((activeIndex + 1) % previews.length));
+    const countEl0 = wrap.querySelector("#previewCount");
+    if (countEl0) countEl0.textContent = "1 / " + previews.length;
 
     return wrap;
   }
@@ -649,6 +633,7 @@
     const titleEl = document.getElementById("projectTitle");
 
     if (!briefId || !email) {
+      titleEl.textContent = "We couldn't open this project";
       loadingEl.style.display = "none";
       errorEl.style.display = "block";
       errorEl.textContent = "This link is missing its project id or email — please use the link from your original brief confirmation.";
@@ -657,6 +642,7 @@
 
     currentBriefId = briefId;
     currentClientEmail = email;
+    document.getElementById("clientEmail").textContent = email;
 
     try {
       const res = await fetch(`/api/dashboard-data?id=${encodeURIComponent(briefId)}&email=${encodeURIComponent(email)}`);
@@ -720,6 +706,7 @@
       loadingEl.style.display = "none";
       contentEl.style.display = "block";
     } catch (err) {
+      titleEl.textContent = "We couldn't open this project";
       loadingEl.style.display = "none";
       errorEl.style.display = "block";
       errorEl.textContent = "Couldn't load this project. Please check the link or try again.";
