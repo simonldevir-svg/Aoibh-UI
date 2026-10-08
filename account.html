@@ -4,63 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aoibh — Your Account</title>
-<style>
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #ffffff;
-    color: #16161a;
-    padding: 2.5rem;
-  }
-  .wrap { max-width: 480px; margin: 8vh auto 0; }
-  h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
-  p.subtitle { color: #6b6a66; font-size: 0.9rem; margin: 0 0 2rem; }
-  .plan-card {
-    border: 1px solid #e5e4e0; border-radius: 12px;
-    padding: 1.25rem 1.4rem; margin-bottom: 1.5rem;
-  }
-  .plan-name { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
-  .plan-meta { font-size: 0.85rem; color: #6b6a66; }
-  .plan-warning {
-    margin-top: 10px; padding: 0.6rem 0.8rem; border-radius: 8px;
-    background: #fff6da; color: #8a6d00; font-size: 0.85rem;
-  }
-  .plan-canceled {
-    margin-top: 10px; padding: 0.6rem 0.8rem; border-radius: 8px;
-    background: #f4f4f2; color: #6b6a66; font-size: 0.85rem;
-  }
-  .tools { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 2rem; }
-  .tool-link {
-    display: block;
-    padding: 1rem 1.2rem;
-    border: 1px solid #e5e4e0;
-    border-radius: 12px;
-    text-decoration: none;
-    color: #16161a;
-    background: none;
-    text-align: left;
-    width: 100%;
-    box-sizing: border-box;
-    font-family: inherit;
-    cursor: pointer;
-  }
-  .tool-link[disabled] { cursor: not-allowed; opacity: 0.55; }
-  .tool-link.disabled { cursor: not-allowed; opacity: 0.55; pointer-events: none; }
-  .tool-link strong { display: block; font-size: 1rem; margin-bottom: 2px; }
-  .tool-link span { font-size: 0.85rem; color: #6b6a66; }
-  #logoutBtn {
-    background: none;
-    border: 1px solid #e5e4e0;
-    border-radius: 999px;
-    padding: 0.6rem 1.2rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    color: #6b6a66;
-  }
-</style>
+<link rel="icon" href="/assets/favicon/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/night.css">
 </head>
 <body>
-<div class="wrap">
+<div class="glow"></div>
+<header class="topbar"><a class="brand" href="/index.html"><span class="logo">Aoibh</span><span class="pill">Account</span></a></header>
+<div class="wrap wide">
+  <div class="eyebrow">Your account</div>
   <h1>Your account</h1>
   <p class="subtitle" id="whoami">Checking session…</p>
 
