@@ -58,4 +58,46 @@
     modal.addEventListener("click", function (e) { if (e.target === modal) closeFilm(); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && modal.classList.contains("open")) closeFilm(); });
   }
+
+  // email tiles: crossfade through the images while the tile is on screen (first image only for reduced motion)
+  document.querySelectorAll("[data-cycle]").forEach(function (box) {
+    var imgs = [].slice.call(box.querySelectorAll("img")), i = 0, timer = null;
+    if (!imgs.length) return;
+    imgs[0].classList.add("on");
+    if (reduce || imgs.length < 2) return;
+    function step() { imgs[i].classList.remove("on"); i = (i + 1) % imgs.length; imgs[i].classList.add("on"); }
+    var vis = "IntersectionObserver" in window ? new IntersectionObserver(function (es) {
+      es.forEach(function (e) { clearInterval(timer); if (e.isIntersecting) timer = setInterval(step, 2600); });
+    }, { threshold: 0.25 }) : null;
+    if (vis) vis.observe(box); else timer = setInterval(step, 2600);
+  });
+
+  // click an email to view it large
+  var lb = document.getElementById("lb");
+  if (lb) {
+    var lbImg = lb.querySelector("img");
+    document.addEventListener("click", function (ev) { var z = ev.target.closest("[data-zoom]"); if (z) { lbImg.src = z.dataset.zoom; lb.classList.add("open"); } });
+    lb.addEventListener("click", function () { lb.classList.remove("open"); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") lb.classList.remove("open"); });
+  }
+
+  // email stage: tabs + window that cycles through the emails; hover pauses, click a tab to jump
+  document.querySelectorAll(".em-stagewrap").forEach(function (wrap) {
+    var tabs = [].slice.call(wrap.querySelectorAll(".em-tab")), imgs = [].slice.call(wrap.querySelectorAll(".em-view img")), cur = 0, t, DUR = 4200;
+    if (!tabs.length) return;
+    wrap.style.setProperty("--dur", DUR + "ms");
+    function go(i) {
+      cur = i;
+      tabs.forEach(function (b, k) { b.classList.remove("on"); void b.offsetWidth; if (k === i) b.classList.add("on"); });
+      imgs.forEach(function (m, k) { m.classList.toggle("on", k === i); });
+      clearTimeout(t);
+      if (!reduce) t = setTimeout(function () { go((cur + 1) % tabs.length); }, DUR);
+    }
+    tabs.forEach(function (b, k) { b.addEventListener("click", function () { go(k); }); });
+    var stage = wrap.querySelector(".em-stage");
+    stage.addEventListener("mouseenter", function () { clearTimeout(t); });
+    stage.addEventListener("mouseleave", function () { go(cur); });
+    imgs.forEach(function (m) { m.dataset.zoom = m.src; });
+    go(0);
+  });
 })();
