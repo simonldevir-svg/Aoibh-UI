@@ -91,6 +91,38 @@ async function sendClientEmail({ to, subject, text }) {
   }
 }
 
+// Internal "money arrived" alert to the studio inbox. Mirrors sendClientEmail:
+// fails soft — a missing key or a Resend hiccup is logged, never allowed to
+// fail the webhook (Stripe would retry and double-process the payment).
+const STAFF_ALERT_TO = process.env.STAFF_ALERT_EMAIL || "hello@aoibh.ai";
+
+async function sendStaffAlert({ subject, text }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("sendStaffAlert skipped: RESEND_API_KEY not set");
+    return;
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from: "Aoibh Payments <leads@aoibh.ai>", to: [STAFF_ALERT_TO], subject, text }),
+    });
+    if (!res.ok) {
+      console.error("sendStaffAlert rejected by Resend:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("sendStaffAlert failed:", err.message);
+  }
+}
+
+function formatPaid(session) {
+  if (typeof session.amount_total !== "number") return "amount not reported";
+  return `${(session.amount_total / 100).toFixed(2)} ${(session.currency || "").toUpperCase()}`.trim();
+}
+
 // Stripe's subscription.status has more values than we need to expose —
 // collapse to the three subscribers.status allows. Unrecognized statuses
 // fall to 'past_due' (blocks new projects) rather than 'active', since
@@ -146,18 +178,31 @@ async function handleTrialCheckout(session) {
         subject: "Your deposit is confirmed — work is starting",
         text: `Hi ${brief.name || "there"},\n\nYour deposit has cleared and ${designerName} is getting started on your project right away.\n\nTrack progress here: ${dashboardUrl}\n\n— Aoibh`,
       });
+      await sendStaffAlert({
+        subject: `Deposit paid: ${brief.name || brief.email || "a client"} (${formatPaid(session)})`,
+        text: `A trial deposit has been paid and work can start.\n\nClient: ${brief.name || "—"}\nEmail: ${brief.email || "—"}\nPaid: ${formatPaid(session)}\nDesigner: ${designerName}\n\nDashboard: ${dashboardUrl}`,
+      });
     }
   } else if (stage === 'balance') {
-    const { error } = await supabase
+    const { data: paidRows, error } = await supabase
       .from('briefs')
       .update({
         payment_status: 'paid_in_full',
         balance_paid_at: new Date().toISOString(),
       })
       .eq('id', briefId)
-      .eq('stripe_balance_session_id', session.id);
+      .eq('stripe_balance_session_id', session.id)
+      .select('email, name');
 
     if (error) throw error;
+
+    const paidBrief = Array.isArray(paidRows) ? paidRows[0] : null;
+    if (paidBrief) {
+      await sendStaffAlert({
+        subject: `Balance paid: ${paidBrief.name || paidBrief.email || "a client"} (${formatPaid(session)})`,
+        text: `A client has paid the balance. Upload the final files and mark the project delivered.\n\nClient: ${paidBrief.name || "—"}\nEmail: ${paidBrief.email || "—"}\nPaid: ${formatPaid(session)}\n\nDashboard: ${process.env.SITE_URL}/dashboard.html?id=${briefId}&email=${encodeURIComponent(paidBrief.email || "")}\nUpload page: ${process.env.SITE_URL}/upload.html`,
+      });
+    }
 
     // TODO: unlock full-resolution files here — e.g. flip a `files_unlocked`
     // flag the dashboard checks before generating signed download URLs.
@@ -207,6 +252,10 @@ async function handleSubscriptionCheckout(session) {
     to: email,
     subject: `You're subscribed to Aoibh ${tierName}`,
     text: `Hi,\n\nYour ${tierName} subscription is active. Sign in any time to start a project:\n\n${process.env.SITE_URL}/subscriber-login.html\n\nJust enter this email address and we'll send you a sign-in link.\n\n— Aoibh`,
+  });
+  await sendStaffAlert({
+    subject: `New subscriber: ${email} (${tierName}, ${formatPaid(session)})`,
+    text: `A new ${tierName} subscription has been paid.\n\nEmail: ${email}\nPlan: ${tierName}\nPaid today: ${formatPaid(session)}\n\nThey can now sign in and start projects.`,
   });
 }
 
