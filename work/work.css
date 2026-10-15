@@ -286,3 +286,7 @@ footer .row{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;f
   .pclose{margin-top:90px}
 }
 @media(prefers-reduced-motion:reduce){.chip.live::before{animation:none}.pm img,.pc img{transition:none}}
+
+/* project CTA moved below the process section */
+.endcta{padding-top:90px;padding-bottom:110px}
+.endcta .t-cta{grid-column:auto;grid-row:auto;padding:90px 20px;border-radius:14px}
