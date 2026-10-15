@@ -25,6 +25,8 @@
 // fictional list. Putting a real person's photo under a made-up identity
 // would be worse than no photo at all, so this roster and the gallery are
 // kept as the same 6 people, on purpose.
+
+import { cleanAttribution, cleanPage, logMilestone } from "./_funnel.js";
 const FALLBACK_ROSTER = [
   {
     id: "eve-berlin",
@@ -188,7 +190,7 @@ async function countSubscriberProjectsThisPeriod(subscriberId, periodStart) {
 // Saves every completed brief to Supabase and sends a notification email
 // via Resend. Both steps fail soft — if Supabase or Resend has a problem,
 // we log it and move on rather than breaking the response the user sees.
-async function saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId }) {
+async function saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId, funnelAttr, host }) {
   let briefId = null;
   let jobNumber = null;
   const artDirector = artDirectorRoster[Math.floor(Math.random() * artDirectorRoster.length)];
@@ -226,6 +228,18 @@ async function saveBrief({ email, name, answers, result, artDirectorRoster, subs
     } catch (err) {
       console.error("saveBrief failed:", err.message);
     }
+  }
+
+  // Funnel tracking: record which ad / landing page this brief came from. Fails soft inside
+  // logMilestone, so it can never affect the brief or the response.
+  if (briefId) {
+    await logMilestone({
+      event: "brief_saved",
+      briefId,
+      attribution: cleanAttribution(funnelAttr),
+      page: cleanPage(funnelAttr && funnelAttr.lp),
+      host,
+    });
   }
 
   if (process.env.RESEND_API_KEY) {
@@ -317,6 +331,7 @@ export default async function handler(req, res) {
   const answers = (req.body && req.body.answers) || {};
   let email = (req.body && req.body.email || "").trim();
   const name = (req.body && req.body.name || "").trim();
+  const funnelAttr = (req.body && req.body.attribution) || null;
 
   // A subscriber's identity and cap are established from their own
   // session cookie, never from the request body — otherwise a client
@@ -348,7 +363,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     const fallbackResult = fallbackMatch(answers, roster);
-    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId });
+    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId, funnelAttr, host: req.headers.host });
     return res.status(200).json({ ...fallbackResult, briefId, jobNumber, email });
   }
 
@@ -426,7 +441,7 @@ Pick the designer now.`;
       confidence,
       source: "ai",
     };
-    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId });
+    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result, artDirectorRoster, subscriberId, funnelAttr, host: req.headers.host });
     return res.status(200).json({ ...result, briefId, jobNumber, email });
   } catch (err) {
     // Network error, timeout, bad JSON, or an id not in the roster — always
@@ -434,7 +449,7 @@ Pick the designer now.`;
     // with no designer at all.
     console.error("match-designer failed:", err.message);
     const fallbackResult = fallbackMatch(answers, roster);
-    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId });
+    const { briefId, jobNumber } = await saveBrief({ email, name, answers, result: fallbackResult, artDirectorRoster, subscriberId, funnelAttr, host: req.headers.host });
     return res.status(200).json({ ...fallbackResult, briefId, jobNumber, email });
   }
 }

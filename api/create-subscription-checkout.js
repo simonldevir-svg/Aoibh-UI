@@ -10,6 +10,7 @@
 // STRIPE_PRICE_GROWTH, SITE_URL.
 
 import Stripe from 'stripe';
+import { cleanAttribution, cleanPage } from './_funnel.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -41,7 +42,12 @@ export default async function handler(req, res) {
       mode: 'subscription',
       customer_email: cleanEmail,
       line_items: [{ price: TIER_PRICES[tier], quantity: 1 }],
-      metadata: { tier },
+      // Campaign tags ride along on the session so the webhook can credit the subscription to the ad
+      metadata: {
+        tier,
+        ...Object.fromEntries(Object.entries(cleanAttribution(req.body && req.body.attribution)).filter(([, v]) => v)),
+        ...(req.body && req.body.attribution && req.body.attribution.lp ? { lp: cleanPage(req.body.attribution.lp) } : {}),
+      },
       success_url: `${process.env.SITE_URL}/subscriber-login.html?subscribed=1`,
       cancel_url: `${process.env.SITE_URL}/#pricing`,
     });

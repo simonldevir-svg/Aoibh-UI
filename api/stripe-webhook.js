@@ -20,6 +20,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { buffer } from 'micro';
+import { cleanAttribution, logMilestone } from './_funnel.js';
 
 export const config = {
   api: { bodyParser: false },
@@ -182,6 +183,7 @@ async function handleTrialCheckout(session) {
         subject: `Deposit paid: ${brief.name || brief.email || "a client"} (${formatPaid(session)})`,
         text: `A trial deposit has been paid and work can start.\n\nClient: ${brief.name || "—"}\nEmail: ${brief.email || "—"}\nPaid: ${formatPaid(session)}\nDesigner: ${designerName}\n\nDashboard: ${dashboardUrl}`,
       });
+      await logMilestone({ event: 'deposit_paid', briefId, amountCents: session.amount_total });
     }
   } else if (stage === 'balance') {
     const { data: paidRows, error } = await supabase
@@ -198,6 +200,7 @@ async function handleTrialCheckout(session) {
 
     const paidBrief = Array.isArray(paidRows) ? paidRows[0] : null;
     if (paidBrief) {
+      await logMilestone({ event: 'balance_paid', briefId, amountCents: session.amount_total });
       await sendStaffAlert({
         subject: `Balance paid: ${paidBrief.name || paidBrief.email || "a client"} (${formatPaid(session)})`,
         text: `A client has paid the balance. Upload the final files and mark the project delivered.\n\nClient: ${paidBrief.name || "—"}\nEmail: ${paidBrief.email || "—"}\nPaid: ${formatPaid(session)}\n\nDashboard: ${process.env.SITE_URL}/dashboard.html?id=${briefId}&email=${encodeURIComponent(paidBrief.email || "")}\nUpload page: ${process.env.SITE_URL}/upload.html`,
@@ -252,6 +255,15 @@ async function handleSubscriptionCheckout(session) {
     to: email,
     subject: `You're subscribed to Aoibh ${tierName}`,
     text: `Hi,\n\nYour ${tierName} subscription is active. Sign in any time to start a project:\n\n${process.env.SITE_URL}/subscriber-login.html\n\nJust enter this email address and we'll send you a sign-in link.\n\n— Aoibh`,
+  });
+  await logMilestone({
+    event: 'subscribed',
+    amountCents: session.amount_total,
+    attribution: cleanAttribution({
+      utm_source: session.metadata?.utm_source, utm_medium: session.metadata?.utm_medium, utm_campaign: session.metadata?.utm_campaign,
+      utm_term: session.metadata?.utm_term, utm_content: session.metadata?.utm_content, gclid: session.metadata?.gclid,
+    }),
+    page: session.metadata?.lp,
   });
   await sendStaffAlert({
     subject: `New subscriber: ${email} (${tierName}, ${formatPaid(session)})`,

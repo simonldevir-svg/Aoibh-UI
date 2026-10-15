@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Aoibh — Funnel</title>
+<link rel="icon" href="/assets/favicon/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/night.css">
+<style>
+  .fw { max-width: 1180px; margin: 0 auto; padding: 0 4px; }
+  h1 { font-size: 40px; margin: 38px 0 6px; }
+  .sub { color: var(--soft); font-size: 14px; margin-bottom: 26px; max-width: 760px; line-height: 1.6; }
+  .ctl { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-bottom: 22px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; background: var(--panel); }
+  .seg button { background: none; border: 0; color: var(--soft); font: 500 12.5px var(--sans); padding: 9px 15px; cursor: pointer; }
+  .seg button.on { background: var(--ink); color: #000; }
+  .ctl input[type=date], .ctl select { margin: 0; padding: 9px 12px; width: auto; font-size: 13px; border-radius: 10px; color-scheme: dark; }
+  .ctl label.chk { display: inline-flex; gap: 7px; align-items: center; margin: 0; text-transform: none; letter-spacing: 0; font: 400 13px var(--sans); color: var(--soft); }
+  .ctl label.chk input { width: auto; margin: 0; }
+  .banner { border: 1px solid rgba(255,194,74,.4); background: rgba(255,194,74,.08); color: var(--amber); border-radius: 14px; padding: 16px 20px; font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
+  .banner.ok { border-color: rgba(61,220,132,.35); background: rgba(61,220,132,.07); color: var(--green); padding: 10px 16px; font-size: 13px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 26px; }
+  .kpi { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; padding: 16px 18px; }
+  .kpi .l { font: 400 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .kpi .v { font-family: var(--display); font-size: 30px; letter-spacing: -.02em; margin-top: 8px; }
+  .kpi .n { font-size: 12px; color: var(--soft); margin-top: 3px; }
+  h2 { font: 500 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--faint); margin: 34px 0 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; }
+  .pcard { border: 1px solid var(--line); background: var(--panel); border-radius: 18px; padding: 22px; }
+  .pcard h3 { font-family: var(--display); font-size: 22px; font-weight: 400; margin-bottom: 4px; }
+  .pcard .meta { font-size: 12.5px; color: var(--soft); margin-bottom: 16px; }
+  .step { display: grid; grid-template-columns: 138px 1fr 92px; gap: 12px; align-items: center; padding: 7px 0; font-size: 13px; }
+  .step .nm { color: var(--soft); }
+  .bar { height: 10px; border-radius: 6px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); border-radius: 6px; min-width: 2px; }
+  .step .ct { text-align: right; font-variant-numeric: tabular-nums; }
+  .step .ct small { color: var(--faint); margin-left: 6px; }
+  .step.worst .nm, .step.worst .ct small { color: var(--amber); }
+  .tw { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 760px; }
+  th { text-align: right; font: 500 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { text-align: right; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.05); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.good { color: var(--green); } td.bad { color: var(--amber); } td.dim { color: var(--faint); }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+  .secrow { display: grid; grid-template-columns: 96px 1fr 50px; gap: 12px; align-items: center; padding: 5px 0; font-size: 12.5px; }
+  .secrow .nm { color: var(--soft); }
+  .secrow .ct { text-align: right; color: var(--soft); font-variant-numeric: tabular-nums; }
+  .empty { color: var(--faint); font-size: 13px; padding: 6px 0; }
+  .spendf { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 14px; }
+  .spendf > div { display: flex; flex-direction: column; }
+  .spendf label { margin-bottom: 6px; } .spendf input { margin: 0; width: 170px; padding: 11px 13px; font-size: 13px; color-scheme: dark; }
+  .spendf button[type=submit] { width: auto; padding: 12px 22px; font-size: 13px; }
+  .del { background: none; border: 0; color: var(--faint); cursor: pointer; font-size: 13px; }
+  .del:hover { color: var(--red); }
+  .guide { border: 1px solid var(--line); background: var(--panel); border-radius: 16px; padding: 22px 24px; font-size: 13.5px; line-height: 1.7; color: var(--soft); }
+  .guide b { color: var(--ink); font-weight: 600; }
+  .guide ul { padding-left: 18px; margin: 6px 0 12px; }
+  .msg { font-size: 13px; margin-top: 8px; min-height: 18px; }
+  .msg.err { color: var(--red); } .msg.ok { color: var(--green); }
+  @media (max-width: 640px) { .step { grid-template-columns: 110px 1fr 84px; } h1 { font-size: 30px; } }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<header class="topbar"><a class="brand" href="/staff.html"><span class="logo">Aoibh</span><span class="pill">Funnel</span></a><a class="brand" href="/staff.html" style="font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--soft)">← Staff</a></header>
+
+<div class="fw">
+  <h1>What's working</h1>
+  <p class="sub" id="whoami">Checking session…</p>
+
+  <div class="ctl">
+    <div class="seg" id="presets"><button data-d="7">7 days</button><button data-d="14" class="on">14 days</button><button data-d="30">30 days</button><button data-d="90">90 days</button></div>
+    <input type="date" id="from" aria-label="From"><span style="color:var(--faint)">to</span><input type="date" id="to" aria-label="To">
+    <select id="src" aria-label="Source"><option value="google">Google Ads traffic only</option><option value="all">All traffic (incl. direct)</option></select>
+    <label class="chk"><input type="checkbox" id="env"> Include preview/test traffic</label>
+  </div>
+
+  <div id="status"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <h2>Landing pages, step by step</h2>
+  <div class="cards" id="pages"></div>
+
+  <h2>Campaigns</h2><div class="tw" id="t-campaign"></div>
+  <h2>Keywords (utm_term)</h2><div class="tw" id="t-term"></div>
+  <h2>Ads (utm_content)</h2><div class="tw" id="t-content"></div>
+
+  <h2>Where people drop off</h2>
+  <div class="two" id="sections"></div>
+
+  <h2>Phone vs desktop</h2><div class="tw" id="t-device"></div>
+
+  <h2>Ad spend (type it in from Google Ads)</h2>
+  <form class="spendf" id="spendForm">
+    <div><label for="sw">Week starting (Monday)</label><input type="date" id="sw" required></div>
+    <div><label for="sc">Campaign (utm_campaign)</label><input type="text" id="sc" list="campaigns" placeholder="e.g. startups-search" required><datalist id="campaigns"></datalist></div>
+    <div><label for="sa">Spend (€)</label><input type="number" id="sa" step="0.01" min="0" placeholder="200" required></div>
+    <div><label for="sn">Note (optional)</label><input type="text" id="sn" maxlength="200" placeholder=""></div>
+    <button type="submit">Save</button>
+  </form>
+  <div class="msg" id="spendMsg"></div>
+  <div class="tw" id="t-spend"></div>
+
+  <h2>How to read this</h2>
+  <div class="guide">
+    <b>Views</b> are page loads, not unique people (the tracking uses no cookies). They should be roughly 70–95% of the clicks Google Ads reports. Much lower usually means a slow page or ad blockers.<br>
+    <b>Button clicks</b> show which button was used. <b>Briefs started</b> is the brief chat opening; <b>briefs saved</b> means they finished it; <b>deposits</b> and <b>balances</b> are payments confirmed by Stripe.<br>
+    <ul>
+      <li><b>Enough data?</b> Wait for around 100 views per page, or 4 to 6 weeks, before judging a page. One week of €200 is noisy.</li>
+      <li><b>Few clicks on buttons:</b> the page or the promise isn't landing. Check the section chart to see where people leave.</li>
+      <li><b>Clicks but few briefs saved:</b> the brief chat is the barrier, or the visitors aren't the right fit.</li>
+      <li><b>Briefs but no deposits:</b> the price or the matching step is the barrier. Look at the briefs themselves.</li>
+      <li><b>A keyword with spend but no briefs started</b> after about €40 is a candidate to pause. Add it to the negative keywords if it is clearly the wrong audience.</li>
+    </ul>
+    Campaign names in the spend box must match <b>utm_campaign</b> exactly, or the cost columns will stay empty.
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Number(n || 0).toLocaleString('en-GB');
+  const eur = (c) => { const v = c / 100; return '€' + v.toLocaleString('en-GB', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 }); };
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 + '%' : '–');
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const mondayOf = (d) => { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); return x; };
+  const PAGE_NAMES = { startups: 'Start-ups & SMEs', agencies: 'Agencies & white-label', home: 'Home page (no landing page)' };
+  const STEPS = [['view', 'Page views'], ['cta_click', 'Button clicks'], ['brief_started', 'Brief started'], ['brief_saved', 'Brief finished'], ['deposit_paid', 'Deposit paid'], ['balance_paid', 'Balance paid']];
+
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+  let data = null;
+
+  function qs() {
+    return `from=${$('from').value}&to=${$('to').value}&src=${$('src').value}&env=${$('env').checked ? 'all' : 'prod'}`;
+  }
+
+  async function load() {
+    const res = await fetch('/api/funnel-stats?' + qs());
+    if (res.status === 401) { location.href = '/login.html'; return; }
+    data = await res.json();
+    render();
+  }
+
+  function render() {
+    const st = $('status'); st.textContent = ''; st.className = '';
+    if (data.setup) {
+      const b = el('div', 'banner');
+      b.innerHTML = '<b>One setup step is left.</b> The tracking tables do not exist yet. In Supabase, open the SQL Editor, paste in the contents of <b>funnel-migration.sql</b> (in the Research folder of the repo, and a copy on your Desktop) and press Run. Until then nothing is recorded, and nothing else on the site is affected.';
+      st.appendChild(b);
+      ['kpis', 'pages', 't-campaign', 't-term', 't-content', 'sections', 't-device', 't-spend'].forEach((id) => { $(id).textContent = ''; });
+      return;
+    }
+    if (data.error) { st.appendChild(el('div', 'banner', data.error)); return; }
+
+    const b = el('div', data.eventCount ? 'banner ok' : 'banner');
+    if (data.eventCount) {
+      const mins = Math.max(0, Math.round((Date.now() - new Date(data.lastEventAt).getTime()) / 60000));
+      b.textContent = `Tracking is working: ${fmt(data.eventCount)} events in this range, latest ${mins < 60 ? mins + ' min' : Math.round(mins / 60) + ' h'} ago.` + (data.truncated ? ' (Showing the first 30,000 events only.)' : '');
+    } else {
+      b.textContent = 'No events in this range yet. Visit a landing page with ?utm_source=google in the address, then tick "Include preview/test traffic" if you are testing on a preview.';
+    }
+    st.appendChild(b);
+
+    // KPIs
+    const t = data.total, spend = data.spend.total_cents;
+    const k = [
+      ['Page views', fmt(t.view), ''],
+      ['Button clicks', fmt(t.cta_click + t.plan_click), pct(t.cta_click + t.plan_click, t.view) + ' of views'],
+      ['Briefs started', fmt(t.brief_started), pct(t.brief_started, t.view) + ' of views'],
+      ['Briefs finished', fmt(t.brief_saved), pct(t.brief_saved, t.brief_started) + ' of started'],
+      ['Deposits paid', fmt(t.deposit_paid), pct(t.deposit_paid, t.brief_saved) + ' of finished'],
+      ['Revenue so far', eur(t.revenue_cents), `${fmt(t.balance_paid)} balances, ${fmt(t.subscribed)} subscriptions`],
+      ['Spend (typed in)', spend ? eur(spend) : '–', ''],
+      ['Cost per brief', spend && t.brief_saved ? eur(spend / t.brief_saved) : '–', 'spend ÷ finished briefs'],
+      ['Cost per deposit', spend && t.deposit_paid ? eur(spend / t.deposit_paid) : '–', 'spend ÷ deposits'],
+    ];
+    const kp = $('kpis'); kp.textContent = '';
+    k.forEach(([l, v, n]) => { const c = el('div', 'kpi'); c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v)); c.appendChild(el('div', 'n', n)); kp.appendChild(c); });
+
+    // pages
+    const pg = $('pages'); pg.textContent = '';
+    const order = ['startups', 'agencies', 'home'];
+    const byKey = Object.fromEntries(data.pages.map((p) => [p.key, p]));
+    order.filter((key) => byKey[key]).forEach((key) => {
+      const p = byKey[key], c = el('div', 'pcard');
+      c.appendChild(el('h3', '', PAGE_NAMES[key] || key));
+      c.appendChild(el('div', 'meta', key === 'home' ? 'Briefs and subscriptions that did not come through a landing page.' : `lp=${key}`));
+      let worst = -1, worstRate = 2;
+      const vals = STEPS.map(([ev]) => (ev === 'cta_click' ? p.cta_click + p.plan_click : p[ev]));
+      vals.forEach((v, i) => { if (i >= 2 && i <= 4 && vals[i - 1] >= 8) { const r = v / vals[i - 1]; if (r < worstRate) { worstRate = r; worst = i; } } });
+      const max = Math.max(1, vals[0]);
+      STEPS.forEach(([ev, name], i) => {
+        const row = el('div', 'step' + (i === worst ? ' worst' : ''));
+        row.appendChild(el('div', 'nm', name));
+        const bar = el('div', 'bar'); const fill = el('i'); fill.style.width = Math.max(0, Math.min(100, (vals[i] / max) * 100)) + '%'; bar.appendChild(fill); row.appendChild(bar);
+        const ct = el('div', 'ct', fmt(vals[i])); if (i > 0) ct.appendChild(el('small', '', pct(vals[i], vals[i - 1]))); row.appendChild(ct);
+        c.appendChild(row);
+      });
+      if (worst > 0) c.appendChild(el('div', 'meta', `Weakest step after the click: ${STEPS[worst - 1][1].toLowerCase()} → ${STEPS[worst][1].toLowerCase()}.`));
+      const ctas = (data.ctas && data.ctas[key]) || {};
+      const list = Object.entries(ctas).sort((a, b) => b[1] - a[1]);
+      if (list.length) c.appendChild(el('div', 'meta', 'Buttons used: ' + list.map(([n, v]) => `${n.replace(/_/g, ' ')} ${v}`).join(' · ')));
+      pg.appendChild(c);
+    });
+    if (!pg.children.length) pg.appendChild(el('div', 'empty', 'No landing page traffic in this range yet.'));
+
+    // tables
+    const spendBy = data.spend.by_campaign || {};
+    table('t-campaign', data.campaign, true, spendBy);
+    table('t-term', data.term, false, {});
+    table('t-content', data.content, false, {});
+
+    // sections
+    const sc = $('sections'); sc.textContent = '';
+    ['startups', 'agencies'].forEach((key) => {
+      const card = el('div', 'pcard'); card.appendChild(el('h3', '', PAGE_NAMES[key]));
+      const views = (byKey[key] && byKey[key].view) || 0;
+      card.appendChild(el('div', 'meta', 'Share of page views that scrolled this far'));
+      const s = (data.sections && data.sections[key]) || {};
+      const names = ['hero', 'problem', 'how', 'whitelabel', 'offer', 'work', 'proof', 'pricing', 'faq', 'final'].filter((n) => s[n] !== undefined || (key === 'agencies' && n === 'whitelabel') || n !== 'whitelabel');
+      if (!views) card.appendChild(el('div', 'empty', 'No views yet.'));
+      else names.forEach((n) => {
+        const r = el('div', 'secrow'); r.appendChild(el('div', 'nm', n === 'faq' ? 'FAQ' : n === 'whitelabel' ? 'White-label' : n.charAt(0).toUpperCase() + n.slice(1)));
+        const bar = el('div', 'bar'), fill = el('i'); fill.style.width = Math.min(100, ((s[n] || 0) / views) * 100) + '%'; bar.appendChild(fill); r.appendChild(bar);
+        r.appendChild(el('div', 'ct', pct(s[n] || 0, views))); card.appendChild(r);
+      });
+      sc.appendChild(card);
+    });
+
+    // devices
+    const dv = $('t-device'); dv.textContent = '';
+    const dt = document.createElement('table');
+    dt.innerHTML = '<thead><tr><th>Device</th><th>Views</th><th>Button clicks</th><th>Click rate</th><th>Briefs started</th><th>Briefs finished</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    ['mobile', 'desktop'].forEach((d) => {
+      const m = data.devices[d]; const tr = document.createElement('tr');
+      [d === 'mobile' ? 'Phone' : 'Desktop', fmt(m.view), fmt(m.cta_click + m.plan_click), pct(m.cta_click + m.plan_click, m.view), fmt(m.brief_started), fmt(m.brief_saved)].forEach((x) => tr.appendChild(el('td', '', x)));
+      tb.appendChild(tr);
+    });
+    dt.appendChild(tb); dv.appendChild(dt);
+
+    // spend entries + campaign suggestions
+    const dl = $('campaigns'); dl.textContent = '';
+    const names = new Set(data.campaign.map((c) => c.key).filter((x) => x !== '(none)'));
+    Object.keys(spendBy).forEach((x) => names.add(x));
+    names.forEach((n) => { const o = document.createElement('option'); o.value = n; dl.appendChild(o); });
+    const sp = $('t-spend'); sp.textContent = '';
+    if (!data.spend.entries.length) sp.appendChild(el('div', 'empty', 'No spend recorded in this range.'));
+    else {
+      const stt = document.createElement('table');
+      stt.innerHTML = '<thead><tr><th>Week starting</th><th>Campaign</th><th>Spend</th><th>Note</th><th></th></tr></thead>';
+      const sb = document.createElement('tbody');
+      data.spend.entries.forEach((e) => {
+        const tr = document.createElement('tr');
+        tr.appendChild(el('td', '', e.week_start)); tr.appendChild(el('td', '', e.campaign)); tr.appendChild(el('td', '', eur(e.amount_cents))); tr.appendChild(el('td', 'dim', e.note || ''));
+        const td = document.createElement('td'); const del = el('button', 'del', 'Delete'); del.type = 'button';
+        del.addEventListener('click', async () => { if (!confirm('Delete this spend entry?')) return; await fetch('/api/funnel-spend?id=' + e.id, { method: 'DELETE' }); load(); });
+        td.appendChild(del); tr.appendChild(td); sb.appendChild(tr);
+      });
+      stt.appendChild(sb); sp.appendChild(stt);
+    }
+  }
+
+  function table(id, rows, withSpend, spendBy) {
+    const host = $(id); host.textContent = '';
+    if (!rows.length) { host.appendChild(el('div', 'empty', 'Nothing in this range yet.')); host.style.padding = '16px 20px'; return; }
+    host.style.padding = '';
+    const t = document.createElement('table');
+    const cols = ['', 'Views', 'Clicks', 'Click rate', 'Started', 'Finished', 'Deposits'].concat(withSpend ? ['Spend', 'Cost / brief', 'Cost / deposit'] : []);
+    const thead = document.createElement('thead'), hr = document.createElement('tr');
+    cols.forEach((c, i) => hr.appendChild(el('th', '', i === 0 ? (id === 't-campaign' ? 'Campaign' : id === 't-term' ? 'Keyword' : 'Ad') : c)));
+    thead.appendChild(hr); t.appendChild(thead);
+    const tb = document.createElement('tbody');
+    rows.forEach((r) => {
+      const tr = document.createElement('tr'); const clicks = r.cta_click + r.plan_click;
+      tr.appendChild(el('td', r.key === '(none)' ? 'dim' : '', r.key));
+      tr.appendChild(el('td', '', fmt(r.view))); tr.appendChild(el('td', '', fmt(clicks)));
+      const rate = r.view ? clicks / r.view : 0;
+      tr.appendChild(el('td', r.view >= 20 ? (rate >= 0.08 ? 'good' : rate < 0.03 ? 'bad' : '') : 'dim', pct(clicks, r.view)));
+      tr.appendChild(el('td', r.view >= 15 && r.brief_started === 0 ? 'bad' : '', fmt(r.brief_started)));
+      tr.appendChild(el('td', r.brief_saved ? 'good' : '', fmt(r.brief_saved)));
+      tr.appendChild(el('td', r.deposit_paid ? 'good' : '', fmt(r.deposit_paid)));
+      if (withSpend) {
+        const sp = spendBy[r.key] || 0;
+        tr.appendChild(el('td', sp ? '' : 'dim', sp ? eur(sp) : '–'));
+        tr.appendChild(el('td', sp && r.brief_saved ? '' : 'dim', sp && r.brief_saved ? eur(sp / r.brief_saved) : '–'));
+        tr.appendChild(el('td', sp && r.deposit_paid ? '' : 'dim', sp && r.deposit_paid ? eur(sp / r.deposit_paid) : '–'));
+      }
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); host.appendChild(t);
+  }
+
+  // controls
+  function setRange(days) { const to = new Date(), from = new Date(Date.now() - (days - 1) * 86400000); $('to').value = iso(to); $('from').value = iso(from); }
+  $('presets').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    document.querySelectorAll('#presets button').forEach((x) => x.classList.toggle('on', x === b));
+    setRange(+b.dataset.d); load();
+  });
+  ['from', 'to', 'src', 'env'].forEach((id) => $(id).addEventListener('change', () => { document.querySelectorAll('#presets button').forEach((x) => x.classList.remove('on')); load(); }));
+  $('sw').value = iso(mondayOf(new Date()));
+  $('spendForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const m = $('spendMsg'); m.className = 'msg'; m.textContent = 'Saving…';
+    const r = await fetch('/api/funnel-spend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ week_start: $('sw').value, campaign: $('sc').value, amount_eur: $('sa').value, note: $('sn').value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { m.className = 'msg err'; m.textContent = j.error || 'Could not save'; return; }
+    m.className = 'msg ok'; m.textContent = 'Saved.'; $('sa').value = ''; $('sn').value = ''; load();
+  });
+
+  (async () => {
+    try {
+      const res = await fetch('/api/auth-session'); const j = await res.json();
+      if (!j.authenticated) { location.href = '/login.html'; return; }
+      $('whoami').textContent = 'Signed in as ' + j.email + '. Counts come from Aoibh\'s own anonymous tracking (no cookies, no personal data). Spend is typed in by hand from Google Ads.';
+      setRange(14); load();
+    } catch (e) { location.href = '/login.html'; }
+  })();
+})();
+</script>
+</body>
+</html>

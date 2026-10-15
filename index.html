@@ -1582,7 +1582,7 @@
         const r = await fetch('/api/match-designer', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ answers, email: contact.email, name: contact.name  }),
+          body: JSON.stringify({ answers, email: contact.email, name: contact.name, attribution: window.__AOIBH_ATTR || null }),
           signal: controller.signal,
         });
         clearTimeout(t);
@@ -1682,6 +1682,7 @@
     }
 
     function openBrief(){
+      if (window.__aoibhTrack) window.__aoibhTrack('brief_started');
       overlay.classList.add('open');
       document.body.style.overflow = 'hidden';
       resetChat();
@@ -2041,7 +2042,7 @@
         const res = await fetch('/api/create-subscription-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, tier: selectedTier }),
+          body: JSON.stringify({ email, tier: selectedTier, attribution: window.__AOIBH_ATTR || null }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Something went wrong');
@@ -2053,6 +2054,40 @@
       }
     });
   })();
+</script>
+
+<script>
+// Landing-page hand-off + funnel attribution. The ad's campaign tags arrive in the URL and are kept
+// in memory only (no cookies, no storage). They are sent with the brief or subscription so each
+// brief can be credited to the ad that brought it. See api/_funnel.js.
+(function () {
+  var KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'lp'];
+  var q = new URLSearchParams(location.search), A = {};
+  KEYS.forEach(function (k) { var v = q.get(k); if (v) A[k] = v.slice(0, k === 'gclid' ? 200 : 100); });
+  window.__AOIBH_ATTR = A;
+
+  window.__aoibhTrack = function (ev) {
+    try {
+      var body = JSON.stringify({ page: A.lp || 'home', device: window.innerWidth < 768 ? 'mobile' : 'desktop', attr: A, events: [{ e: ev }] });
+      if (navigator.sendBeacon && navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' }))) return;
+      fetch('/api/track', { method: 'POST', headers: { 'content-type': 'application/json' }, body: body, keepalive: true }).catch(function () {});
+    } catch (e) {}
+  };
+
+  // Landing pages send visitors here with ?start=1 (brief chat), ?subscribe=starter|growth or ?contact=1.
+  var start = q.get('start'), sub = q.get('subscribe'), contact = q.get('contact');
+  if (start || sub || contact) {
+    ['start', 'subscribe', 'contact'].forEach(function (k) { q.delete(k); });
+    try { history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q.toString() : '') + location.hash); } catch (e) {}
+    setTimeout(function () {
+      var el = null;
+      if (start) el = document.querySelector('.js-start-brief');
+      else if (sub === 'starter' || sub === 'growth') el = document.querySelector('.pricing-cta[data-tier="' + sub + '"]');
+      else if (contact) el = document.getElementById('contactLink');
+      if (el) el.click();
+    }, 350);
+  }
+})();
 </script>
 
 </body>

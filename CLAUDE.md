@@ -283,6 +283,32 @@ proposed — see section 0 there for the full comparison:
   Created by `auth-verify.js`; checked on every request to `upload.html`'s
   and `qa-review.html`'s API endpoints; deleted on sign-out.
 
+## Paid landing pages and funnel tracking (2026-10)
+
+Two ad landing pages, both `noindex`, both built from one template (static HTML, `lp/lp.css`, `lp/lp.js`):
+`lp/startups.html` (start-ups and SMEs) and `lp/agencies.html` (agencies, white-label on Enterprise). Their
+buttons go to the home page, which opens the brief chat (`/?start=1`), the subscribe box (`?subscribe=starter|growth`)
+or the contact box (`?contact=1`) — handled by the small script at the end of `index.html`, which also keeps the ad's
+campaign tags in memory (`window.__AOIBH_ATTR`, no cookies or storage) and sends them with the brief
+(`match-designer.js`) and with a subscription checkout (`create-subscription-checkout.js`, stored as Stripe metadata).
+
+First-party, cookie-free tracking (no IP, no user agent, no visitor id stored):
+- `api/_funnel.js` — shared helpers (underscore = not a route). Every write fails soft.
+- `api/track.js` — `POST /api/track`, beacon from the landing pages and home page: `view`, `section_view`,
+  `cta_click`, `plan_click`, `brief_started`. Bots ignored; `env` = prod/preview from the host.
+- Server-side milestones: `brief_saved` (in `saveBrief()`), `deposit_paid` / `balance_paid` / `subscribed`
+  (in `stripe-webhook.js`). Payments are credited to the ad that brought the brief by looking up the brief's
+  `brief_saved` row (`findBriefAttribution`).
+- Tables `funnel_events` and `funnel_spend`: SQL in `Research/funnel-migration.sql` — **run once in Supabase**;
+  until then nothing is recorded and nothing else is affected.
+- `funnel.html` + `api/funnel-stats.js` + `api/funnel-spend.js` — staff-only results page (linked from `staff.html`):
+  funnel steps per landing page, campaign/keyword/ad tables, section reach, phone vs desktop, and a spend box
+  (typed in from Google Ads) giving cost per brief and cost per deposit. Spend's `campaign` must equal `utm_campaign`.
+- Ad URL convention: `utm_source=google&utm_medium=cpc&utm_campaign=<startups-search|agencies-search>&utm_term={keyword}&utm_content=<ad name>`.
+  `privacy.html` discloses all of this. Not built yet (Stage 2): consent banner plus Google Ads / LinkedIn tags.
+- Views are raw page loads (cookie-free means no unique visitors). Test traffic from preview deployments is tagged
+  `env=preview` and hidden by default on `funnel.html`.
+
 ## How the intake flow works
 
 1. Visitor opens the brief modal → Aoibh asks for their **name**, then
