@@ -291,7 +291,7 @@ Stripe Price IDs (`STRIPE_PRICE_STARTER` / `STRIPE_PRICE_GROWTH`), which must be
 `api/create-subscription-checkout.js` checks the Price's currency and amount before every checkout and refuses
 (503, "contact us") if it differs from what the site advertises (`ADVERTISED` in that file), so a stale euro
 Price can never charge something different from the page. Existing euro subscribers are untouched. The
-"€18K" stat on the home page is a claim, deliberately not converted.
+home-page "£18K" client-savings stat was restated in pounds at the owner's request (it is a claim, not a price).
 
 ## Paid landing pages and funnel tracking (2026-10)
 
