@@ -283,6 +283,16 @@ proposed — see section 0 there for the full comparison:
   Created by `auth-verify.js`; checked on every request to `upload.html`'s
   and `qa-review.html`'s API endpoints; deleted on sign-out.
 
+## Currency (2026-10): pounds
+
+All prices are now in **GBP** (UK-first): trial £695 (30% deposit £208.50, balance £486.50, hard-coded in
+`api/create-checkout.js`, `currency: 'gbp'`), Starter £995, Growth £2,795, Enterprise from £5,595. Subscriptions use
+Stripe Price IDs (`STRIPE_PRICE_STARTER` / `STRIPE_PRICE_GROWTH`), which must be the matching GBP prices;
+`api/create-subscription-checkout.js` checks the Price's currency and amount before every checkout and refuses
+(503, "contact us") if it differs from what the site advertises (`ADVERTISED` in that file), so a stale euro
+Price can never charge something different from the page. Existing euro subscribers are untouched. The
+"€18K" stat on the home page is a claim, deliberately not converted.
+
 ## Paid landing pages and funnel tracking (2026-10)
 
 Two ad landing pages, both `noindex`, both built from one template (static HTML, `lp/lp.css`, `lp/lp.js`):
@@ -321,7 +331,7 @@ First-party, cookie-free tracking (no IP, no user agent, no visitor id stored):
 3. `phrase-questions.js` warmly rephrases the fixed 4-question set
    (project, budget, deadline, assets). Falls back to static copy on
    failure — never blocks the flow.
-   - **Budget gate**: under €1,000 → hands off to a human producer.
+   - **Budget gate**: a bare number under 1,000 (no currency check) → hands off to a human producer.
 4. All 4 answered → `match-designer.js` picks a designer from `ROSTER`,
    scores confidence, **saves the brief to Supabase**, emails a lead
    notification. On failure, a deterministic `fallbackMatch()` covers it.

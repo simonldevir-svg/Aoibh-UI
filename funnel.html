@@ -99,7 +99,7 @@
   <form class="spendf" id="spendForm">
     <div><label for="sw">Week starting (Monday)</label><input type="date" id="sw" required></div>
     <div><label for="sc">Campaign (utm_campaign)</label><input type="text" id="sc" list="campaigns" placeholder="e.g. startups-search" required><datalist id="campaigns"></datalist></div>
-    <div><label for="sa">Spend (€)</label><input type="number" id="sa" step="0.01" min="0" placeholder="200" required></div>
+    <div><label for="sa">Spend (£, your Google Ads currency)</label><input type="number" id="sa" step="0.01" min="0" placeholder="200" required></div>
     <div><label for="sn">Note (optional)</label><input type="text" id="sn" maxlength="200" placeholder=""></div>
     <button type="submit">Save</button>
   </form>
@@ -111,11 +111,11 @@
     <b>Views</b> are page loads, not unique people (the tracking uses no cookies). They should be roughly 70–95% of the clicks Google Ads reports. Much lower usually means a slow page or ad blockers.<br>
     <b>Button clicks</b> show which button was used. <b>Briefs started</b> is the brief chat opening; <b>briefs saved</b> means they finished it; <b>deposits</b> and <b>balances</b> are payments confirmed by Stripe.<br>
     <ul>
-      <li><b>Enough data?</b> Wait for around 100 views per page, or 4 to 6 weeks, before judging a page. One week of €200 is noisy.</li>
+      <li><b>Enough data?</b> Wait for around 100 views per page, or 4 to 6 weeks, before judging a page. One week of £200 is noisy.</li>
       <li><b>Few clicks on buttons:</b> the page or the promise isn't landing. Check the section chart to see where people leave.</li>
       <li><b>Clicks but few briefs saved:</b> the brief chat is the barrier, or the visitors aren't the right fit.</li>
       <li><b>Briefs but no deposits:</b> the price or the matching step is the barrier. Look at the briefs themselves.</li>
-      <li><b>A keyword with spend but no briefs started</b> after about €40 is a candidate to pause. Add it to the negative keywords if it is clearly the wrong audience.</li>
+      <li><b>A keyword with spend but no briefs started</b> after about £40 is a candidate to pause. Add it to the negative keywords if it is clearly the wrong audience.</li>
     </ul>
     Campaign names in the spend box must match <b>utm_campaign</b> exactly, or the cost columns will stay empty.
   </div>
@@ -125,7 +125,7 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n || 0).toLocaleString('en-GB');
-  const eur = (c) => { const v = c / 100; return '€' + v.toLocaleString('en-GB', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 }); };
+  const money = (c) => { const v = c / 100; return '£' + v.toLocaleString('en-GB', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 }); };
   const pct = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 + '%' : '–');
   const iso = (d) => d.toISOString().slice(0, 10);
   const mondayOf = (d) => { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); return x; };
@@ -175,10 +175,10 @@
       ['Briefs started', fmt(t.brief_started), pct(t.brief_started, t.view) + ' of views'],
       ['Briefs finished', fmt(t.brief_saved), pct(t.brief_saved, t.brief_started) + ' of started'],
       ['Deposits paid', fmt(t.deposit_paid), pct(t.deposit_paid, t.brief_saved) + ' of finished'],
-      ['Revenue so far', eur(t.revenue_cents), `${fmt(t.balance_paid)} balances, ${fmt(t.subscribed)} subscriptions`],
-      ['Spend (typed in)', spend ? eur(spend) : '–', ''],
-      ['Cost per brief', spend && t.brief_saved ? eur(spend / t.brief_saved) : '–', 'spend ÷ finished briefs'],
-      ['Cost per deposit', spend && t.deposit_paid ? eur(spend / t.deposit_paid) : '–', 'spend ÷ deposits'],
+      ['Revenue so far', money(t.revenue_cents), `${fmt(t.balance_paid)} balances, ${fmt(t.subscribed)} subscriptions`],
+      ['Spend (typed in)', spend ? money(spend) : '–', ''],
+      ['Cost per brief', spend && t.brief_saved ? money(spend / t.brief_saved) : '–', 'spend ÷ finished briefs'],
+      ['Cost per deposit', spend && t.deposit_paid ? money(spend / t.deposit_paid) : '–', 'spend ÷ deposits'],
     ];
     const kp = $('kpis'); kp.textContent = '';
     k.forEach(([l, v, n]) => { const c = el('div', 'kpi'); c.appendChild(el('div', 'l', l)); c.appendChild(el('div', 'v', v)); c.appendChild(el('div', 'n', n)); kp.appendChild(c); });
@@ -258,7 +258,7 @@
       const sb = document.createElement('tbody');
       data.spend.entries.forEach((e) => {
         const tr = document.createElement('tr');
-        tr.appendChild(el('td', '', e.week_start)); tr.appendChild(el('td', '', e.campaign)); tr.appendChild(el('td', '', eur(e.amount_cents))); tr.appendChild(el('td', 'dim', e.note || ''));
+        tr.appendChild(el('td', '', e.week_start)); tr.appendChild(el('td', '', e.campaign)); tr.appendChild(el('td', '', money(e.amount_cents))); tr.appendChild(el('td', 'dim', e.note || ''));
         const td = document.createElement('td'); const del = el('button', 'del', 'Delete'); del.type = 'button';
         del.addEventListener('click', async () => { if (!confirm('Delete this spend entry?')) return; await fetch('/api/funnel-spend?id=' + e.id, { method: 'DELETE' }); load(); });
         td.appendChild(del); tr.appendChild(td); sb.appendChild(tr);
@@ -288,9 +288,9 @@
       tr.appendChild(el('td', r.deposit_paid ? 'good' : '', fmt(r.deposit_paid)));
       if (withSpend) {
         const sp = spendBy[r.key] || 0;
-        tr.appendChild(el('td', sp ? '' : 'dim', sp ? eur(sp) : '–'));
-        tr.appendChild(el('td', sp && r.brief_saved ? '' : 'dim', sp && r.brief_saved ? eur(sp / r.brief_saved) : '–'));
-        tr.appendChild(el('td', sp && r.deposit_paid ? '' : 'dim', sp && r.deposit_paid ? eur(sp / r.deposit_paid) : '–'));
+        tr.appendChild(el('td', sp ? '' : 'dim', sp ? money(sp) : '–'));
+        tr.appendChild(el('td', sp && r.brief_saved ? '' : 'dim', sp && r.brief_saved ? money(sp / r.brief_saved) : '–'));
+        tr.appendChild(el('td', sp && r.deposit_paid ? '' : 'dim', sp && r.deposit_paid ? money(sp / r.deposit_paid) : '–'));
       }
       tb.appendChild(tr);
     });
@@ -309,7 +309,7 @@
   $('spendForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const m = $('spendMsg'); m.className = 'msg'; m.textContent = 'Saving…';
-    const r = await fetch('/api/funnel-spend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ week_start: $('sw').value, campaign: $('sc').value, amount_eur: $('sa').value, note: $('sn').value }) });
+    const r = await fetch('/api/funnel-spend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ week_start: $('sw').value, campaign: $('sc').value, amount: $('sa').value, note: $('sn').value }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { m.className = 'msg err'; m.textContent = j.error || 'Could not save'; return; }
     m.className = 'msg ok'; m.textContent = 'Saved.'; $('sa').value = ''; $('sn').value = ''; load();

@@ -1,4 +1,4 @@
-// POST   /api/funnel-spend   body { week_start: "YYYY-MM-DD", campaign, amount_eur, note? }  — record a week's ad spend
+// POST   /api/funnel-spend   body { week_start: "YYYY-MM-DD", campaign, amount, note? }  — record a week's ad spend
 // DELETE /api/funnel-spend?id=<id>                                                           — remove an entry
 // Staff-session gated. Spend is typed in by hand (copied from Google Ads) so funnel.html can work
 // out cost per brief and cost per paid deposit. `campaign` must match the ad's utm_campaign.
@@ -56,18 +56,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    const { week_start, campaign, amount_eur, note } = req.body || {};
+    const { week_start, campaign, amount, note } = req.body || {};
     if (!/^\d{4}-\d{2}-\d{2}$/.test(week_start || "")) return res.status(400).json({ error: "Pick the week start date" });
     const camp = String(campaign || "").replace(/[\u0000-\u001f\u007f<>"'`]/g, "").trim().slice(0, 100);
     if (!camp) return res.status(400).json({ error: "Enter the campaign name (it must match utm_campaign)" });
-    const eur = Number(amount_eur);
-    if (!Number.isFinite(eur) || eur < 0 || eur > 100000) return res.status(400).json({ error: "Enter the spend in euros" });
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value < 0 || value > 100000) return res.status(400).json({ error: "Enter the spend as a number" });
     const cleanNote = note ? String(note).replace(/[\u0000-\u001f\u007f<>"'`]/g, "").trim().slice(0, 200) : null;
 
     const r = await supa("funnel_spend", {
       method: "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ week_start, campaign: camp, amount_cents: Math.round(eur * 100), note: cleanNote }),
+      body: JSON.stringify({ week_start, campaign: camp, amount_cents: Math.round(value * 100), note: cleanNote }),
     });
     if (!r.ok) {
       console.error("funnel-spend insert failed:", r.status, (await r.text()).slice(0, 200));

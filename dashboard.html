@@ -214,7 +214,7 @@
             <div class="title">Let's get started</div>
             <div class="sub" id="depositIntro">A 30% deposit kicks off your trial project. Work begins as soon as it clears — the remaining balance is only due once you've reviewed the preview.</div>
             <div class="amount" id="depositAmount">—</div>
-            <div class="amount-sub">Deposit · 30% of €695</div>
+            <div class="amount-sub">Deposit · 30% of £695</div>
             <button class="pay-btn" id="payDepositBtn">Pay deposit</button>
             <div class="pay-error" id="depositError"></div>
           </div>
@@ -291,9 +291,9 @@
   let currentBriefId = null;
   let currentClientEmail = null;
 
-  function formatEuros(cents) {
+  function formatMoney(cents) {
     if (typeof cents !== "number") return "—";
-    return "€" + (cents / 100).toFixed(2);
+    return "£" + (cents / 100).toFixed(2);
   }
 
   function formatBytes(bytes) {
@@ -539,8 +539,8 @@
         unlock.className = "card unlock";
         unlock.innerHTML = `
           <div class="title">Unlock full files</div>
-          <div class="price">${formatEuros(data.balanceAmount)} due</div>
-          <div class="price-note">Remaining 70% · ${formatEuros(data.depositAmount)} deposit already paid</div>
+          <div class="price">${formatMoney(data.balanceAmount)} due</div>
+          <div class="price-note">Remaining 70% · ${formatMoney(data.depositAmount)} deposit already paid</div>
           <button class="unlock-btn" id="payBalanceBtn">Pay balance</button>
           <div class="pay-error" id="balanceError"></div>
           <div class="unlock-sub">Includes source files, assets & style guide</div>
@@ -661,7 +661,7 @@
         setStatusChip("amber", "Awaiting deposit to begin work");
         const depositDesignerName = data.designer ? data.designer.name : "your designer";
         document.getElementById("heroMsg").textContent = `You're matched with ${depositDesignerName}. Pay your deposit and they'll get started right away.`;
-        document.getElementById("depositAmount").textContent = formatEuros(data.depositAmount);
+        document.getElementById("depositAmount").textContent = formatMoney(data.depositAmount);
         const payBtn = document.getElementById("payDepositBtn");
         const depErrorEl = document.getElementById("depositError");
         payBtn.addEventListener("click", () => startCheckout("deposit", payBtn, depErrorEl));

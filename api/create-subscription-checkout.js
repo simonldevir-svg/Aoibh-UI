@@ -19,6 +19,24 @@ const TIER_PRICES = {
   growth: process.env.STRIPE_PRICE_GROWTH,
 };
 
+// The site advertises these prices in pounds (index.html, lp/*.html). Before charging, check that
+// the configured Stripe Price really is that amount in GBP, so a stale or euro Price ID can never
+// charge a customer something different from what the page promised. Checked once per cold start.
+const ADVERTISED = { starter: { currency: 'gbp', cents: 99500 }, growth: { currency: 'gbp', cents: 279500 } };
+const priceChecked = {};
+async function assertPriceMatchesAdvert(tier) {
+  if (priceChecked[tier]) return;
+  const price = await stripe.prices.retrieve(TIER_PRICES[tier]);
+  const want = ADVERTISED[tier];
+  if (price.currency !== want.currency || price.unit_amount !== want.cents) {
+    console.error(`STRIPE_PRICE_${tier.toUpperCase()} is ${price.unit_amount} ${price.currency}, but the site advertises ${want.cents} ${want.currency}`);
+    const err = new Error('This plan is being updated and cannot be bought online right now. Please contact us at hello@aoibh.ai.');
+    err.status = 503;
+    throw err;
+  }
+  priceChecked[tier] = true;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -38,6 +56,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: `STRIPE_PRICE_${tier.toUpperCase()} is not configured` });
     }
 
+    await assertPriceMatchesAdvert(tier);
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: cleanEmail,
@@ -55,6 +75,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ checkoutUrl: session.url });
   } catch (err) {
     console.error('create-subscription-checkout error:', err);
-    return res.status(500).json({ error: err.message || 'Could not create checkout session' });
+    return res.status(err.status || 500).json({ error: err.message || 'Could not create checkout session' });
   }
 }

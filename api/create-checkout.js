@@ -2,7 +2,7 @@
 //
 // Creates a Stripe Checkout session for a trial project. Called twice per
 // project across its lifecycle:
-//   1. Before work starts   -> stage = 'deposit'  (30% of €695)
+//   1. Before work starts   -> stage = 'deposit'  (30% of £695)
 //   2. After preview review -> stage = 'balance'  (remaining 70%)
 //
 // SETUP NEEDED:
@@ -21,7 +21,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const TRIAL_TOTAL_CENTS = 69500; // €695.00
+const TRIAL_TOTAL_CENTS = 69500; // £695.00
 const DEPOSIT_RATE = 0.3;
 
 export default async function handler(req, res) {
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
       line_items: [
         {
           price_data: {
-            currency: 'eur',
+            currency: 'gbp',
             product_data: { name: productName },
             unit_amount: amountCents,
           },
