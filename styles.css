@@ -1459,3 +1459,14 @@
   display:block; font-family:var(--serif); font-size:16px; color:var(--ink); margin-bottom:10px;
 }
 .article-related-link:hover{ color:var(--indigo); }
+
+/* ---------- ask AI about Aoibh ---------- */
+.ask-ai{padding:56px 0 64px;border-top:1px solid var(--line-soft);text-align:center}
+.ask-label{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--ink-faint);margin-bottom:20px}
+.ask-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.ask-btn{font-family:var(--mono);font-size:13px;color:var(--ink);text-decoration:none;padding:12px 18px;border:1px solid var(--line);border-radius:10px;background:transparent;transition:background .18s,color .18s,border-color .18s}
+.ask-btn span{color:var(--ink-faint);transition:color .18s}
+.ask-btn:hover,.ask-btn:focus-visible{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.ask-btn:hover span,.ask-btn:focus-visible span{color:var(--paper)}
+.ask-btn:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+@media (max-width:560px){.ask-ai{padding:44px 0 52px}.ask-btn{padding:11px 15px}}
