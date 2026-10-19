@@ -290,3 +290,9 @@ footer .row{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;f
 /* project CTA moved below the process section */
 .endcta{padding-top:90px;padding-bottom:110px}
 .endcta .t-cta{grid-column:auto;grid-row:auto;padding:90px 20px;border-radius:14px}
+
+/* final film player at the end of the process section */
+.chip.live.done::before{animation:none}
+.film{margin:48px 0 0}
+.film video{display:block;width:100%;aspect-ratio:1600/670;background:#000;border:1px solid var(--line);border-radius:6px}
+.film figcaption{margin-top:14px;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
